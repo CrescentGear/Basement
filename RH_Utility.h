@@ -89,37 +89,39 @@ struct __Kernel_t{
 };
 typedef struct __Kernel_t       __Kernel_t;
 
-union __PixelRGB565_t{
-  struct{
-    uint16_t R : 5;
-    uint16_t G : 6;
-    uint16_t B : 5;
-  };
+union __UNION_PixelRGB565_t{
+    struct __PixelRGB565_t{
+        uint16_t R : 5;
+        uint16_t G : 6;
+        uint16_t B : 5;
+    };
     uint16_t data;
 };
-typedef union __PixelRGB565_t   __PixelRGB565_t;
+typedef struct  __PixelRGB565_t         __PixelRGB565_t;
+typedef union   __UNION_PixelRGB565_t   __UNION_PixelRGB565_t;
 
-union __PixelRGB888_t{
-  struct{
-    uint32_t R : 8;
-    uint32_t G : 8;
-    uint32_t B : 8;
-  };
+union __UNION_PixelRGB888_t{
+    struct __PixelRGB888_t{
+        uint8_t R ;
+        uint8_t G ;
+        uint8_t B ;
+    };
     uint32_t data;
 };
-typedef union __PixelRGB888_t   __PixelRGB888_t;
+typedef struct  __PixelRGB888_t         __PixelRGB888_t;
+typedef union   __UNION_PixelRGB888_t   __UNION_PixelRGB888_t;
 
 struct __ImageRGB565_t{
-  __PixelRGB565_t* pBuffer;
-  size_t      width;
-  size_t      height;
+    __UNION_PixelRGB565_t* pBuffer;
+    size_t      width;
+    size_t      height;
 };
 typedef struct __ImageRGB565_t  __ImageRGB565_t;
 
 struct __ImageRGB888_t{
-  __PixelRGB888_t* pBuffer;
-  size_t      width;
-  size_t      height;
+    __UNION_PixelRGB888_t* pBuffer;
+    size_t      width;
+    size_t      height;
 };
 typedef struct __ImageRGB888_t  __ImageRGB888_t;
 

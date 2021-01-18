@@ -35,29 +35,29 @@ int __sqrt(int x){
 ==========================================*/
 
 struct IntArray_t __findMax_INT(const int* pValue,size_t num){
-	int max = *pValue;
-	int cnt = 0;
-	while(num--){
-		if(*pValue > max)
-			max = *pValue;
-		pValue++;
-		cnt++;
-	}
-	struct IntArray_t result = {.index = cnt,.value = max};
-	return result;
+    int max = *pValue;
+    int cnt = 0;
+    while(num--){
+        if(*pValue > max)
+            max = *pValue;
+        pValue++;
+        cnt++;
+    }
+    struct IntArray_t result = {.index = cnt,.value = max};
+    return result;
 }
 
 struct IntArray_t __findMin_INT(const int* pValue,size_t num){
-	int min = *pValue;
-	int cnt = 0;
-	while(num--){
-		if(*pValue < min)
-			min = *pValue;
-		pValue++;
-		cnt++;
-	}
-	struct IntArray_t result = {.index = cnt,.value = min};
-	return result;
+    int min = *pValue;
+    int cnt = 0;
+    while(num--){
+        if(*pValue < min)
+            min = *pValue;
+        pValue++;
+        cnt++;
+    }
+    struct IntArray_t result = {.index = cnt,.value = min};
+    return result;
 }
 
 
@@ -197,7 +197,7 @@ int __Point_toCircle(int xc,int yc,int radius,int px,int py){
 /*=========================================
  > Image Processing Reference 
 ==========================================*/
-#if 1//def _WINDOWS_
+#if defined (_WIN32)
 
 __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
     FILE* bmp;
@@ -208,7 +208,7 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
         .height  = 0,
         .pBuffer = NULL
     };
-    __PixelRGB888_t* pBuffer;
+    __PixelRGB888_t* tempBuffer;
 
     bmp = fopen(path, "r");
     if (bmp == NULL) {
@@ -225,23 +225,27 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
     }
 
     fseek(bmp, fileHead.bfOffBits, SEEK_SET);
-    pBuffer = (__PixelRGB888_t*)malloc(infoHead.biWidth * infoHead.biHeight * sizeof(__PixelRGB888_t));
-    fread(pBuffer, sizeof(__PixelRGB888_t), infoHead.biWidth * infoHead.biHeight, bmp);
+    tempBuffer  = (__PixelRGB888_t*)malloc(infoHead.biWidth * infoHead.biHeight * sizeof(__PixelRGB888_t));
+    fread(tempBuffer, sizeof(__PixelRGB888_t), infoHead.biWidth * infoHead.biHeight, bmp);
     fclose(bmp);
 
+    // RGB Sequence should be reversed.
+    IMG.pBuffer = (__UNION_PixelRGB888_t*)malloc(infoHead.biWidth * infoHead.biHeight * sizeof(__UNION_PixelRGB888_t));
+    
     for (int row = 0; row < infoHead.biHeight; row++) {
         for (int col = 0; col < infoHead.biWidth; col++) {
-            uint8_t R = pBuffer[row * infoHead.biWidth + col].R;
-            uint8_t B = pBuffer[row * infoHead.biWidth + col].B;
-            pBuffer[row * infoHead.biWidth + col].R = B;
-            pBuffer[row * infoHead.biWidth + col].B = R;
+            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].R = tempBuffer[row * infoHead.biWidth + col].B;
+            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].G = tempBuffer[row * infoHead.biWidth + col].G;
+            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].B = tempBuffer[row * infoHead.biWidth + col].R;
         }
     }
+    free(tempBuffer);
 
     IMG.width   = infoHead.biWidth;
     IMG.height  = infoHead.biHeight;
-    IMG.pBuffer = pBuffer;
-    printf("w = %d,h = %d\n",IMG.width,IMG.height);
+    
+    printf("%d\n",infoHead.biSizeImage);
+    // printf("%d\n",fileHead.bfSize);
     printf("Success\n");
     return IMG;
 }
@@ -249,15 +253,50 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
 void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p){
     FILE* bmp;
     BITMAPFILEHEADER fileHead = {
-        .bfOffBits   = 14 + 40 + ...,
-        .bfReserved1 = 0,
-        .bfReserved2 = 0,
-        .bfSize      = sizeof(BITMAPFILEHEADER)+sizeof(BITMAPINFOHEADER)+...+p->height*p->width,
-        .bfType      = 0x4D42, 
+        .bfOffBits      = 40 + 14   ,
+        .bfReserved1    = 0         ,
+        .bfReserved2    = 0         ,
+        .bfSize         = p->height * p->width * sizeof(__PixelRGB888_t) + 54,  
+        .bfType         = 0x4D42    , 
     };
     BITMAPINFOHEADER infoHead = {
-        .
+        .biSize         = 40        ,
+        .biWidth        = p->width  ,
+        .biHeight       = p->height ,
+        .biPlanes       = 1         ,
+        .biBitCount     = 8+8+8     ,
+        .biCompression  = 0         , 
+        .biSizeImage    = p->height * p->width * sizeof(__PixelRGB888_t) ,
+        .biClrUsed      = 0         ,
+        .biClrImportant = 0         ,
+        .biXPelsPerMeter = 4724     ,
+        .biYPelsPerMeter = 4724     ,
     };
+
+    bmp = fopen(path,"wb");
+
+    if(bmp == NULL) return;
+
+    __PixelRGB888_t* tempBuffer = (__PixelRGB888_t*)malloc(p->width * p->height * sizeof(__PixelRGB888_t));
+
+    // RGB Sequence should be reversed.
+    for (int row = 0; row < p->height; row++) {
+        for (int col = 0; col < p->width; col++) {
+            tempBuffer[row * infoHead.biWidth + col].R = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].B;
+            tempBuffer[row * infoHead.biWidth + col].G = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].G;
+            tempBuffer[row * infoHead.biWidth + col].B = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].R;
+        }
+    }
+
+    fwrite(&fileHead ,1 ,sizeof(BITMAPFILEHEADER) , bmp);
+    fwrite(&infoHead ,1 ,sizeof(BITMAPINFOHEADER) , bmp);
+    
+    fwrite(tempBuffer ,sizeof(__PixelRGB888_t) ,p->height * p->width ,bmp);
+
+    fclose(bmp);
+    free(tempBuffer);
+
+    printf("Success\n");
 }
 
 void __FreeBMP_ImgRGB888(__ImageRGB888_t* p){
@@ -379,11 +418,12 @@ void* __memsetWORD(void* __b,WORD value,size_t num){
 #if 1
 #include <windows.h>
 int main(int argc, char const *argv[]){
-    const char* __restrict__ src  = "D:/Personal/Desktop/lenna.bmp";
-    const char* __restrict__ des  = "D:/Personal/Desktop/output.bmp";
+    const char* __restrict__ src  = "C:\\Users\\asus\\Desktop\\lenna.bmp";
+    const char* __restrict__ des  = "C:\\Users\\asus\\Desktop\\output.bmp";
     __ImageRGB888_t IMG = __LoadBMP_ImgRGB888(src);
     __OutBMP_ImgRGB888(des,&IMG);
     __FreeBMP_ImgRGB888(&IMG);
+
 }
 #endif
 
