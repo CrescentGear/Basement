@@ -1,7 +1,13 @@
 #include "RH_Utility.h"
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <math.h>
+
+/*=========================================
+ > Common 
+==========================================*/
+
 
 /*=========================================
  > Algebra Reference 
@@ -203,6 +209,7 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
     FILE* bmp;
     BITMAPFILEHEADER fileHead;
     BITMAPINFOHEADER infoHead;
+
     __ImageRGB888_t  IMG = {
         .width   = 0,
         .height  = 0,
@@ -225,18 +232,19 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
     }
 
     fseek(bmp, fileHead.bfOffBits, SEEK_SET);
-    tempBuffer  = (__PixelRGB888_t*)malloc(infoHead.biWidth * infoHead.biHeight * sizeof(__PixelRGB888_t));
-    fread(tempBuffer, sizeof(__PixelRGB888_t), infoHead.biWidth * infoHead.biHeight, bmp);
+    tempBuffer  = (__PixelRGB888_t*)malloc(infoHead.biSizeImage);
+    fread(tempBuffer, sizeof(__PixelRGB888_t), infoHead.biSizeImage/sizeof(__PixelRGB888_t), bmp);
     fclose(bmp);
 
     // RGB Sequence should be reversed.
+    bool  needAdd = ((infoHead.biWidth%4) != 0);
     IMG.pBuffer = (__UNION_PixelRGB888_t*)malloc(infoHead.biWidth * infoHead.biHeight * sizeof(__UNION_PixelRGB888_t));
     
     for (int row = 0; row < infoHead.biHeight; row++) {
         for (int col = 0; col < infoHead.biWidth; col++) {
-            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].R = tempBuffer[row * infoHead.biWidth + col].B;
-            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].G = tempBuffer[row * infoHead.biWidth + col].G;
-            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].B = tempBuffer[row * infoHead.biWidth + col].R;
+            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].R = tempBuffer[row * (infoHead.biWidth/4*4 + needAdd*4) + col].B;
+            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].G = tempBuffer[row * (infoHead.biWidth/4*4 + needAdd*4) + col].G;
+            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].B = tempBuffer[row * (infoHead.biWidth/4*4 + needAdd*4) + col].R;
         }
     }
     free(tempBuffer);
@@ -244,14 +252,36 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
     IMG.width   = infoHead.biWidth;
     IMG.height  = infoHead.biHeight;
     
-    printf("%d\n",infoHead.biSizeImage);
+    // printf("%d\n",infoHead.biSizeImage);
     // printf("%d\n",fileHead.bfSize);
-    printf("Success\n");
+    // printf("Success\n");
+
+    printf("%d\n" ,infoHead.biSize         );
+    printf("%d\n" ,infoHead.biWidth        );
+    printf("%d\n" ,infoHead.biHeight       );
+    printf("%d\n" ,infoHead.biPlanes       );
+    printf("biBitCount = %d\n" ,infoHead.biBitCount     );
+    printf("%d\n" ,infoHead.biCompression  );
+    printf("%d\n" ,infoHead.biSizeImage    );
+    printf("%d\n" ,infoHead.biClrUsed      );
+    printf("%d\n" ,infoHead.biClrImportant );
+    printf("%d\n" ,infoHead.biXPelsPerMeter);
+    printf("%d\n" ,infoHead.biYPelsPerMeter);
+    
+    printf("=========\n");
+    printf("%d\n",fileHead.bfOffBits  );
+    printf("%d\n",fileHead.bfReserved1);
+    printf("%d\n",fileHead.bfReserved2);
+    printf("%d\n",fileHead.bfSize     );  
+    printf("%d\n",fileHead.bfType     ); 
+
+
     return IMG;
 }
 
 void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p){
     FILE* bmp;
+    bool  needAdd = ((p->width%4) != 0);
     BITMAPFILEHEADER fileHead = {
         .bfOffBits      = 40 + 14   ,
         .bfReserved1    = 0         ,
@@ -266,34 +296,40 @@ void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p){
         .biPlanes       = 1         ,
         .biBitCount     = 8+8+8     ,
         .biCompression  = 0         , 
-        .biSizeImage    = p->height * p->width * sizeof(__PixelRGB888_t) ,
+        .biSizeImage    = p->height * (p->width/4*4 + needAdd*4 ) * sizeof(__PixelRGB888_t) ,
         .biClrUsed      = 0         ,
         .biClrImportant = 0         ,
-        .biXPelsPerMeter = 4724     ,
-        .biYPelsPerMeter = 4724     ,
+        .biXPelsPerMeter = 0        ,
+        .biYPelsPerMeter = 0        ,
     };
 
     bmp = fopen(path,"wb");
 
+
     if(bmp == NULL) return;
 
-    __PixelRGB888_t* tempBuffer = (__PixelRGB888_t*)malloc(p->width * p->height * sizeof(__PixelRGB888_t));
+
+    __PixelRGB888_t* tempBuffer = (__PixelRGB888_t*)malloc(infoHead.biSizeImage);
 
     // RGB Sequence should be reversed.
+    // memset(tempBuffer,233,infoHead.biSizeImage);
     for (int row = 0; row < p->height; row++) {
         for (int col = 0; col < p->width; col++) {
-            tempBuffer[row * infoHead.biWidth + col].R = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].B;
-            tempBuffer[row * infoHead.biWidth + col].G = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].G;
-            tempBuffer[row * infoHead.biWidth + col].B = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].R;
+            tempBuffer[row * (p->width/4*4 + needAdd*4) + col].R = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].B;
+            tempBuffer[row * (p->width/4*4 + needAdd*4) + col].G = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].G;
+            tempBuffer[row * (p->width/4*4 + needAdd*4) + col].B = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].R;
         }
     }
 
+    // memset(tempBuffer,233,infoHead.biSizeImage);
+
+    fseek(bmp,0L,SEEK_SET);
     fwrite(&fileHead ,1 ,sizeof(BITMAPFILEHEADER) , bmp);
     fwrite(&infoHead ,1 ,sizeof(BITMAPINFOHEADER) , bmp);
-    
-    fwrite(tempBuffer ,sizeof(__PixelRGB888_t) ,p->height * p->width ,bmp);
-
+    fseek(bmp,54L,SEEK_SET);
+    fwrite(tempBuffer ,1 ,infoHead.biSizeImage ,bmp);
     fclose(bmp);
+
     free(tempBuffer);
 
     printf("Success\n");
@@ -398,7 +434,7 @@ void __Conv2D_ImgRGB888(const __ImageRGB888_t* in,const __Kernel_t* k,__ImageRGB
 
  // }
 
-void* __memsetWORD(void* __b,WORD value,size_t num){
+void* __memsetWORD(void* __b,uint16_t value,size_t num){
     WORD* src = (WORD*)__b;
     size_t remain = num;
     (*((WORD*)src)) = value;
