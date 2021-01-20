@@ -204,7 +204,7 @@ int __Point_toCircle(int xc,int yc,int radius,int px,int py){
  > Image Processing Reference 
 ==========================================*/
 #if defined (_WIN32)
-
+#include <windows.h>
 __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
     FILE* bmp;
     BITMAPFILEHEADER fileHead;
@@ -233,7 +233,7 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
 
     fseek(bmp, fileHead.bfOffBits, SEEK_SET);
     tempBuffer  = (__PixelRGB888_t*)malloc(infoHead.biSizeImage);
-    fread(tempBuffer, sizeof(__PixelRGB888_t), infoHead.biSizeImage/sizeof(__PixelRGB888_t), bmp);
+    fread(tempBuffer, 1, infoHead.biSizeImage, bmp);
     fclose(bmp);
 
     // RGB Sequence should be reversed.
@@ -242,9 +242,9 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
     
     for (int row = 0; row < infoHead.biHeight; row++) {
         for (int col = 0; col < infoHead.biWidth; col++) {
-            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].R = tempBuffer[row * (infoHead.biWidth/4*4 + needAdd*4) + col].B;
-            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].G = tempBuffer[row * (infoHead.biWidth/4*4 + needAdd*4) + col].G;
-            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].B = tempBuffer[row * (infoHead.biWidth/4*4 + needAdd*4) + col].R;
+            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].R = tempBuffer[row * infoHead.biWidth + col].B;
+            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].G = tempBuffer[row * infoHead.biWidth + col].G;
+            IMG.pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].B = tempBuffer[row * infoHead.biWidth + col].R;
         }
     }
     free(tempBuffer);
@@ -268,12 +268,12 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
     printf("%d\n" ,infoHead.biXPelsPerMeter);
     printf("%d\n" ,infoHead.biYPelsPerMeter);
     
-    printf("=========\n");
-    printf("%d\n",fileHead.bfOffBits  );
-    printf("%d\n",fileHead.bfReserved1);
-    printf("%d\n",fileHead.bfReserved2);
-    printf("%d\n",fileHead.bfSize     );  
-    printf("%d\n",fileHead.bfType     ); 
+    // printf("=========\n");
+    // printf("%d\n",fileHead.bfOffBits  );
+    // printf("%d\n",fileHead.bfReserved1);
+    // printf("%d\n",fileHead.bfReserved2);
+    // printf("%d\n",fileHead.bfSize     );  
+    // printf("%d\n",fileHead.bfType     ); 
 
 
     return IMG;
@@ -302,31 +302,30 @@ void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p){
         .biXPelsPerMeter = 0        ,
         .biYPelsPerMeter = 0        ,
     };
-
+    printf("%d\n" ,infoHead.biSizeImage    );
     bmp = fopen(path,"wb");
 
 
     if(bmp == NULL) return;
 
 
-    __PixelRGB888_t* tempBuffer = (__PixelRGB888_t*)malloc(infoHead.biSizeImage);
+    __PixelRGB888_t* tempBuffer = (__PixelRGB888_t*)malloc(infoHead.biWidth * infoHead.biHeight * sizeof(__PixelRGB888_t));
 
     // RGB Sequence should be reversed.
-    // memset(tempBuffer,233,infoHead.biSizeImage);
+    
     for (int row = 0; row < p->height; row++) {
         for (int col = 0; col < p->width; col++) {
-            tempBuffer[row * (p->width/4*4 + needAdd*4) + col].R = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].B;
-            tempBuffer[row * (p->width/4*4 + needAdd*4) + col].G = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].G;
-            tempBuffer[row * (p->width/4*4 + needAdd*4) + col].B = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].R;
+            tempBuffer[row * infoHead.biWidth + col].R = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].B;
+            tempBuffer[row * infoHead.biWidth + col].G = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].G;
+            tempBuffer[row * infoHead.biWidth + col].B = p->pBuffer[(infoHead.biHeight - row - 1) * infoHead.biWidth + col].R;
+            
         }
     }
-
-    // memset(tempBuffer,233,infoHead.biSizeImage);
 
     fseek(bmp,0L,SEEK_SET);
     fwrite(&fileHead ,1 ,sizeof(BITMAPFILEHEADER) , bmp);
     fwrite(&infoHead ,1 ,sizeof(BITMAPINFOHEADER) , bmp);
-    fseek(bmp,54L,SEEK_SET);
+    // fseek(bmp,54L,SEEK_SET);
     fwrite(tempBuffer ,1 ,infoHead.biSizeImage ,bmp);
     fclose(bmp);
 
@@ -452,10 +451,10 @@ void* __memsetWORD(void* __b,uint16_t value,size_t num){
 }
 
 #if 1
-#include <windows.h>
+
 int main(int argc, char const *argv[]){
-    const char* __restrict__ src  = "C:\\Users\\asus\\Desktop\\lenna.bmp";
-    const char* __restrict__ des  = "C:\\Users\\asus\\Desktop\\output.bmp";
+    const char* __restrict__ src  = "D:\\Personal\\Desktop\\lenna.bmp";
+    const char* __restrict__ des  = "D:\\Personal\\Desktop\\output.bmp";
     __ImageRGB888_t IMG = __LoadBMP_ImgRGB888(src);
     __OutBMP_ImgRGB888(des,&IMG);
     __FreeBMP_ImgRGB888(&IMG);
