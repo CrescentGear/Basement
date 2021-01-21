@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#if 1//def _WINDOWS_
+#if defined (_WIN32)
 #include <windows.h>
 #endif
 
@@ -17,6 +17,8 @@
 #define _PI                                  (3.141592654) 
 #define _2xPI                                (6.283185307)
 #define _EXP                                 (2.718281828)
+
+#pragma anon_unions
 
 #ifdef __cplusplus
  extern "C" {
@@ -89,23 +91,31 @@ struct __Kernel_t{
 };
 typedef struct __Kernel_t       __Kernel_t;
 
+struct __PixelRGB565_t{
+    uint16_t R : 5;
+    uint16_t G : 6;
+    uint16_t B : 5;
+};
+
 union __UNION_PixelRGB565_t{
-    struct __PixelRGB565_t{
-        uint16_t R : 5;
-        uint16_t G : 6;
-        uint16_t B : 5;
-    };
+    uint16_t R : 5;
+    uint16_t G : 6;
+    uint16_t B : 5;
     uint16_t data;
 };
 typedef struct  __PixelRGB565_t         __PixelRGB565_t;
 typedef union   __UNION_PixelRGB565_t   __UNION_PixelRGB565_t;
 
+
+struct __PixelRGB888_t{
+    uint8_t B ;
+    uint8_t G ;
+    uint8_t R ;
+};
 union __UNION_PixelRGB888_t{
-    struct __PixelRGB888_t{
-        uint8_t R ;
-        uint8_t G ;
-        uint8_t B ;
-    };
+    uint8_t B ;
+    uint8_t G ;
+    uint8_t R ;
     uint32_t data;
 };
 typedef struct  __PixelRGB888_t         __PixelRGB888_t;
@@ -124,6 +134,10 @@ struct __ImageRGB888_t{
     size_t      height;
 };
 typedef struct __ImageRGB888_t  __ImageRGB888_t;
+
+__ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path);
+void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p);
+void __FreeBMP_ImgRGB888(__ImageRGB888_t* p);
 
 void __Conv2D_ImgRGB565(const __ImageRGB565_t* in,const __Kernel_t* k,__ImageRGB565_t* out,int coe);
 void __Conv2D_ImgRGB888(const __ImageRGB888_t* in,const __Kernel_t* k,__ImageRGB888_t* out,int coe);
