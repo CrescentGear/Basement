@@ -150,6 +150,12 @@ void __Conv2D_ImgRGB888(const __ImageRGB888_t* in,const __Kernel_t* k,__ImageRGB
 ======================================================================*/
 #define __VIRTUAL_HEAP_SIZE_BYTE    32768
 
+ struct __MallocNode_t{
+     unsigned long            index;
+     size_t                   byte;
+     struct __MallocNode_t*   pNextNode;
+ };
+ 
 void* __mallocHEAP(size_t size);
 void  __freeHEAP(void* ptr);
 void* __memsetWORD(void* __b,uint16_t value,size_t num);
