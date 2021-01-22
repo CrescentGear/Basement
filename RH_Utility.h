@@ -13,7 +13,9 @@
 
 #define __round(a)                           (int)((a)+0.5)>(int)(a)?((int)(a)+1):((int)(a))
 #define __round1000(a)                       (double)((__round((a)*1000.0))/1000.0)
-                    
+
+#define __abs(val)                           (((val)>0)?(val):(-(val)))
+
 #define _PI                                  (3.141592654) 
 #define _2xPI                                (6.283185307)
 #define _EXP                                 (2.718281828)
@@ -146,8 +148,10 @@ void __Conv2D_ImgRGB888(const __ImageRGB888_t* in,const __Kernel_t* k,__ImageRGB
 /*=====================================================================
  > Memory Programming Reference 
 ======================================================================*/
-#define __VIRTUAL_HEAP_SIZE_BYTE    1//32768
+#define __VIRTUAL_HEAP_SIZE_BYTE    32768
 
+void* __mallocHEAP(size_t size);
+void  __freeHEAP(void* ptr);
 void* __memsetWORD(void* __b,uint16_t value,size_t num);
 
 #ifdef __cplusplus
