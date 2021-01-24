@@ -425,24 +425,114 @@ void __Conv2D_ImgRGB888(const __ImageRGB888_t* in,const __Kernel_t* k,__ImageRGB
 /*=========================================
  > Memory Programming Reference 
 ==========================================*/
- // unsigned char __VERTUAL_HEAP[ __VIRTUAL_HEAP_SIZE_BYTE ]; //__attribute__((at()));
 
- // void* __mallocHEAP(size_t size){
- //     static size_t byteCNT = 0;
- //     if( byteCNT+size > __VIRTUAL_HEAP_SIZE_BYTE )
- //         return NULL;
- //     else{
- //         byteCNT+=size;
- //          //... //
- //         return NULL;
- //     }
- // }
+#define __ADR_DISTANCE( ptr1 , ptr2 )   (size_t)((__abs(ptr2 - ptr1)) - 1)
 
- // void __freeHEAP(void* ptr){
+#pragma pack(1)
+unsigned char __VERTUAL_HEAP[ __VIRTUAL_HEAP_SIZE_BYTE ];//__attribute__((at()));
+static size_t __Allocated_Bytes__  = 0;
 
- // }
+struct __MallocNode_t *pHeapMemoryHeadNode = NULL;
 
-void* __memsetWORD(void* __b,uint16_t value,size_t num){
+/*--------------------------------------------------------------------------------------------------------
+ * Memory Node Should be odered by the member of index
+ *
+ *
+ *    Node1     ->>   Node2       ->>     Node3             ->>      Node4       Nodes
+ *    Memory1   ->>   Memory2     ->>     Memory3           ->>      Memory4     Used Memory
+ *       |               |                   |                          |
+ *       |               |                   |                          |
+ * [ xxxxxxxxx________xxxxxxx_______xxxxxxxxxxxxxxxxxxx____________xxxxxxxxxxx________ ] Virtual Heap
+ * index=0                                                                   index=32768
+ *
+ --------------------------------------------------------------------------------------------------------*/
+
+void* __mallocHEAP(size_t size){
+    size_t size_need       = size;
+    if( __Allocated_Bytes__ + size_need > __VIRTUAL_HEAP_SIZE_BYTE )
+        return NULL;
+    else{
+        __Allocated_Bytes__ += size_need;
+        // It doesn't mean there is enough space to allocate.
+    }
+    
+    void* ptr = NULL;
+    struct __MallocNode_t* pNode     = pHeapMemoryHeadNode;
+    struct __MallocNode_t* pNewNode  = (struct __MallocNode_t*)malloc(sizeof(struct __MallocNode_t));
+    struct __MallocNode_t* pForeward = NULL,*pBackward = NULL;
+    size_t minDist                   = __VIRTUAL_HEAP_SIZE_BYTE;
+    
+    pNewNode->byte      = size_need;
+    pNewNode->pNextNode = NULL;
+    
+    // Only for test.
+    for(int i=0;i<__VIRTUAL_HEAP_SIZE_BYTE;i++)
+        __VERTUAL_HEAP[i] = i;
+    
+    // Special Condition. There isn't any allocated memory.
+    if(pNode == NULL){
+        pHeapMemoryHeadNode = pNewNode;
+        pNewNode->index     = 0;
+        ptr                 = &__VERTUAL_HEAP[pNewNode->index];
+        return ptr;
+    }
+    
+    // Search the optimal memory block for users.
+    while(pNode != NULL){
+        size_t size_free = 0;
+        // All nodes should be ordered by the member of "index". Which means...
+        // "pNode->index" is always ahead of "pNextNode->index" or there will be a problem.
+        if(pNode->pNextNode != NULL){
+            size_free = (pNode->pNextNode->index) - (pNode->index + pNode->byte);
+        }else{
+            size_free = (__VIRTUAL_HEAP_SIZE_BYTE-1) - ((pNode->index) + (pNode->byte));
+        }
+        if( size_free - size_need < minDist && size_free >= size_need ){
+            minDist             = size_free - size_need;
+            ptr                 = &__VERTUAL_HEAP[ (pNode->index + pNode->byte) ];
+
+            pForeward           = pNode;
+            pBackward           = pNode->pNextNode;
+            pNewNode->index     = (pForeward->index + pForeward->byte);
+            pNewNode->pNextNode = pBackward;
+            pNewNode->ptr       = ptr;
+        }
+        // Continue to search...
+        pNode = pNode->pNextNode;
+    }
+    
+    if(ptr != NULL && pForeward != NULL && pNewNode != NULL){
+        // Found enough space to allocate
+        pForeward->pNextNode = pNewNode;
+        pNewNode->pNextNode  = pBackward;
+    }else{
+        // Fail to find enough space to allocate
+        free(pNewNode);
+        __Allocated_Bytes__ -= size_need;
+    }
+    return ptr;
+}
+
+void __freeHEAP(void* ptr){
+    unsigned long index = (unsigned long)((unsigned char*)ptr - __VERTUAL_HEAP);
+    printf("%ld\n",index);
+    struct __MallocNode_t* pNode     = pHeapMemoryHeadNode;
+    struct __MallocNode_t* pForeward = NULL;
+    while(pNode != NULL){
+        if(pNode->index == index && pNode->ptr == ptr){
+            if(pForeward != NULL){
+                pForeward->pNextNode = pNode->pNextNode;
+                __Allocated_Bytes__ -= pNode->byte;
+                free(pNode);
+            }
+            break;
+        }
+        pForeward = pNode;
+        pNode     = pNode->pNextNode;
+    }
+}
+
+void* __memsetWORD(void* __b,int value,size_t num){
     uint16_t* src = (uint16_t*)__b;
     size_t remain = num;
     (*((uint16_t*)src)) = value;
