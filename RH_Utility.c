@@ -432,7 +432,12 @@ void __Conv2D_ImgRGB888(const __ImageRGB888_t* in,const __Kernel_t* k,__ImageRGB
 unsigned char __VERTUAL_HEAP[ __VIRTUAL_HEAP_SIZE_BYTE ];//__attribute__((at()));
 static size_t __Allocated_Bytes__  = 0;
 
-struct __MallocNode_t *pHeapMemoryHeadNode = NULL;
+struct __MallocNode_t{
+    unsigned long            index;
+    size_t                   byte;
+    void*                    ptr;
+    struct __MallocNode_t*   pNextNode;
+}*pHeapMemoryHeadNode = NULL;
 
 /*--------------------------------------------------------------------------------------------------------
  * Memory Node Should be odered by the member of index
@@ -515,7 +520,6 @@ void* __mallocHEAP(size_t size){
 
 void __freeHEAP(void* ptr){
     unsigned long index = (unsigned long)((unsigned char*)ptr - __VERTUAL_HEAP);
-    printf("%ld\n",index);
     struct __MallocNode_t* pNode     = pHeapMemoryHeadNode;
     struct __MallocNode_t* pForeward = NULL;
     while(pNode != NULL){
