@@ -141,6 +141,7 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path);
 void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p);
 void __FreeBMP_ImgRGB888(__ImageRGB888_t* p);
 
+void __Filter_Gray_ImgRGB888(const __ImageRGB888_t* in,__ImageRGB888_t* out);
 void __Conv2D_ImgRGB565(const __ImageRGB565_t* in,const __Kernel_t* k,__ImageRGB565_t* out,int coe);
 void __Conv2D_ImgRGB888(const __ImageRGB888_t* in,const __Kernel_t* k,__ImageRGB888_t* out,int coe);
 
@@ -148,7 +149,9 @@ void __Conv2D_ImgRGB888(const __ImageRGB888_t* in,const __Kernel_t* k,__ImageRGB
 /*=====================================================================
  > Memory Programming Reference 
 ======================================================================*/
-#define __VIRTUAL_HEAP_SIZE_BYTE    32768
+#define __malloc(x)                    __mallocHEAP(x) // malloc
+#define __free(x)                      __freeHEAP(x)   // free
+#define __VIRTUAL_HEAP_SIZE_BYTE    (1<<20)
  
 void* __mallocHEAP(size_t size);
 void  __freeHEAP(void* ptr);

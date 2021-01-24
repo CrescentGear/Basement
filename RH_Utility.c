@@ -276,7 +276,7 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
     fseek(bmp, fileHead.bfOffBits, SEEK_SET);
 
     // RGB Sequence should be reversed.
-    IMG.pBuffer = (__UNION_PixelRGB888_t*)malloc(infoHead.biWidth * infoHead.biHeight * sizeof(__UNION_PixelRGB888_t));
+    IMG.pBuffer = (__UNION_PixelRGB888_t*)__malloc(infoHead.biWidth * infoHead.biHeight * sizeof(__UNION_PixelRGB888_t));
     
     for (int row = 0; row < infoHead.biHeight; row++) {
         for (int col = 0; col < infoHead.biWidth; col++) {
@@ -298,6 +298,8 @@ __ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path){
 
 void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p){
     FILE* bmp;
+    if(p == NULL && p->pBuffer == NULL)
+        return;
     int eps = (4-(p->width*sizeof(__PixelRGB888_t))%4)%4;
     BITMAPFILEHEADER fileHead = {
         .bfOffBits      = 40 + 14   ,
@@ -342,17 +344,36 @@ void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p){
     
     fclose(bmp);
 
-    printf("Success\n");
+//    printf("Success\n");
 }
 
 void __FreeBMP_ImgRGB888(__ImageRGB888_t* p){
-    free(p->pBuffer);
+    __free(p->pBuffer);
     p->height  = 0;
     p->width   = 0;
     p->pBuffer = NULL;
 }
 
+void __Filter_Gray_ImgRGB888(const __ImageRGB888_t* in,__ImageRGB888_t* out){
+    if(in != NULL && out != NULL){
+        if(in->pBuffer != NULL && out->pBuffer != NULL){
+            for (int row = 0; row < in->height; row++) {
+                for (int col = 0; col < in->width; col++) {
+                    long temp = lroundl(0.299 * in->pBuffer[row * in->width + col].R + 0.587 * in->pBuffer[row * in->width + col].G + 0.114 * in->pBuffer[row * in->width + col].B);
+                    out->pBuffer[row * in->width + col].data = (uint32_t)(((temp&0xff)<<16)|((temp&0xff)<<8)|((temp&0xff)));
+                }
+            }
+        }
+    }
+}
 
+void __Filter_Warm_ImgRGB888(const __ImageRGB888_t* in,__ImageRGB888_t* out){
+    
+}
+
+void __Filter_Cold_ImgRGB888(const __ImageRGB888_t* in,__ImageRGB888_t* out){
+    
+}
 
 void __Conv2D_ImgRGB565(const __ImageRGB565_t* in,const __Kernel_t* k,__ImageRGB565_t* out,int coe){
     if( in == NULL || k == NULL || out == NULL)
@@ -553,7 +574,22 @@ void* __memsetWORD(void* __b,int value,size_t num){
     return __b;
 }
 
-
+void* __memsetDWORD(void* __b,long value,size_t num){
+    uint32_t* src = (uint32_t*)__b;
+    size_t remain = num;
+    (*((uint32_t*)src)) = (uint32_t)value;
+    remain--;
+    while(1){
+        if(num<(remain<<1)){
+            memmove((src+(num-remain)),src, (num-remain)*sizeof(uint32_t));
+            remain-=(num-remain);
+        }else{
+            memmove((src+(num-remain)),src, remain*sizeof(uint32_t));
+            break;
+        }
+    }
+    return __b;
+}
 
 
 
