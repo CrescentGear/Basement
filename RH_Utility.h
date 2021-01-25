@@ -17,8 +17,10 @@
 #define __abs(val)                           (((val)>0)?(val):(-(val)))
 
 #define _PI                                  (3.141592654) 
-#define _2xPI                                (6.283185307)
+#define _2PI                                 (6.283185307)
 #define _EXP                                 (2.718281828)
+#define _SQRT_2PI                            (2.506628275)
+
 
 #pragma anon_unions
 
@@ -29,9 +31,10 @@
 /*=====================================================================
  > Algebra Reference 
 ======================================================================*/
-int     __sign    (int x);
-int     __sqrt    (int x);
-
+long    __sign       (long x);
+long    __sqrt       (long x);
+double  __gussian    (long x,long __miu  ,long __sigma);
+double  __gussian2D  (long x,long y      ,long __sigma);
 /*=====================================================================
  > Quantity Reference 
 ======================================================================*/
@@ -88,7 +91,7 @@ int        __Point_toCircle  (int xc,int yc,int radius,                  int px,
  > Image Processing Reference 
 ======================================================================*/
 struct __Kernel_t{
-    int*   pBuffer;
+    uint16_t*   pBuffer;
     size_t order;
 };
 typedef struct __Kernel_t       __Kernel_t;
@@ -108,16 +111,17 @@ union __UNION_PixelRGB565_t{
 typedef struct  __PixelRGB565_t         __PixelRGB565_t;
 typedef union   __UNION_PixelRGB565_t   __UNION_PixelRGB565_t;
 
-
-struct __PixelRGB888_t{
-    uint8_t B ;
-    uint8_t G ;
-    uint8_t R ;
-};
+ struct __PixelRGB888_t{
+     uint8_t B ;
+     uint8_t G ;
+     uint8_t R ;
+ };
 union __UNION_PixelRGB888_t{
-    uint8_t B ;
-    uint8_t G ;
-    uint8_t R ;
+    struct{
+        uint8_t B : 8;
+        uint8_t G : 8;
+        uint8_t R : 8;
+    };
     uint32_t data;
 };
 typedef struct  __PixelRGB888_t         __PixelRGB888_t;
@@ -129,6 +133,7 @@ struct __ImageRGB565_t{
     size_t      height;
 };
 typedef struct __ImageRGB565_t  __ImageRGB565_t;
+ 
 
 struct __ImageRGB888_t{
     __UNION_PixelRGB888_t* pBuffer;
@@ -137,20 +142,25 @@ struct __ImageRGB888_t{
 };
 typedef struct __ImageRGB888_t  __ImageRGB888_t;
 
-__ImageRGB888_t __LoadBMP_ImgRGB888(const char* __restrict__ path);
-void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p);
-void __FreeBMP_ImgRGB888(__ImageRGB888_t* p);
+__ImageRGB888_t* __LoadBMP_ImgRGB888      (const char* __restrict__ path);
+void             __OutBMP_ImgRGB888       (const char* __restrict__ path,__ImageRGB888_t* p);
+__ImageRGB888_t* __Create_ImgRGB888       (size_t width,size_t height);
+__ImageRGB888_t* __CopyBMP_ImgRGB888      (const __ImageRGB888_t* src,__ImageRGB888_t* dst);
 
-void __Filter_Gray_ImgRGB888(const __ImageRGB888_t* in,__ImageRGB888_t* out);
-void __Conv2D_ImgRGB565(const __ImageRGB565_t* in,const __Kernel_t* k,__ImageRGB565_t* out,int coe);
-void __Conv2D_ImgRGB888(const __ImageRGB888_t* in,const __Kernel_t* k,__ImageRGB888_t* out,int coe);
+__ImageRGB888_t* __FreeBuffer_ImgRGB888   (__ImageRGB888_t* ptr);
+void             __Free_ImgRGB888         (__ImageRGB888_t* ptr);
+
+__ImageRGB888_t* __Filter_Gray_ImgRGB888  (const __ImageRGB888_t* src,__ImageRGB888_t* dst);
+__ImageRGB888_t* __Blur_Gussian_ImgRGB888 (const __ImageRGB888_t* src,__ImageRGB888_t* dst,unsigned int _0_100_);
+__ImageRGB565_t* __Conv2D_ImgRGB565       (const __ImageRGB565_t* src,__ImageRGB565_t* dst,const __Kernel_t* k,int coe);
+__ImageRGB888_t* __Conv2D_ImgRGB888       (const __ImageRGB888_t* src,__ImageRGB888_t* dst,const __Kernel_t* k,int coe);
 
 
 /*=====================================================================
  > Memory Programming Reference 
 ======================================================================*/
-#define __malloc(x)                    __mallocHEAP(x) // malloc
-#define __free(x)                      __freeHEAP(x)   // free
+#define __malloc(x)                    malloc(x)//__mallocHEAP(x)
+#define __free(x)                      free(x)//__freeHEAP(x)
 #define __VIRTUAL_HEAP_SIZE_BYTE    (1<<20)
  
 void* __mallocHEAP(size_t size);
