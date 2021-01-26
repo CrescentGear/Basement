@@ -49,18 +49,57 @@ long __sqrt(long x){
 #define M_PI        3.14159265358979323846264338327950288   /* pi             */
 #endif
 
-double __gussian(long x,long __miu,long __sigma){
-    return ((__sigma==0)?(0):(double)((M_2_SQRTPI/((__sigma<<1)*(M_SQRT2)))*exp(-(x-__miu)*(x-__miu)/(double)((__sigma*__sigma)<<1))));
-}
-
-double __gussian2D(long x,long y,long __sigma){
+double __gussian(long x,long __miu,double __sigma){
 // Same Effect but slower,only suitable when __sigma is a value of double.
-//    return ((__sigma==0)?(0):((double)((1/(2*M_PI*__sigma*__sigma))*exp(-((x*x)+(y*y))/(double)((__sigma*__sigma)*2)))));
-    return ((__sigma==0)?(0):((double)((1/(M_PI*__sigma*(__sigma<<1)))*exp(-((x*x)+(y*y))/(double)((__sigma*__sigma<<1))))));
+    return ((__sigma==0)?(0):(double)((M_2_SQRTPI/((__sigma*2)*(M_SQRT2)))*exp(-(x-__miu)*(x-__miu)/(double)((__sigma*__sigma)*2))));
+//    return ((__sigma==0)?(0):(double)((M_2_SQRTPI/((__sigma<<1)*(M_SQRT2)))*exp(-(x-__miu)*(x-__miu)/(double)((__sigma*__sigma)<<1))));
 }
 
-void __generate_GussianKernel(int order,int* buffer){
+double __gussian2D(long x,long y,double __sigma){
+// Same Effect but slower,only suitable when __sigma is a value of double.
+    return ((__sigma==0)?(0):((double)((1/(2*M_PI*__sigma*__sigma))*exp(-((x*x)+(y*y))/(double)((__sigma*__sigma)*2)))));
+//    return ((__sigma==0)?(0):((double)((1/(M_PI*__sigma*(__sigma<<1)))*exp(-((x*x)+(y*y))/(double)((__sigma*__sigma<<1))))));
+}
 
+__Kernel_t* __gussianKernel(double __sigma,size_t order,__Kernel_t* pKernel){
+    if( pKernel == NULL || pKernel->pBuffer == NULL ){
+        return NULL;
+    }
+    
+    if( __sigma == 0){ // In case of divider being zero.
+        memset(pKernel->pBuffer,0,order*order*sizeof(*(pKernel->pBuffer)));
+        pKernel->order = order;
+        pKernel->sigma = 0;
+        return pKernel;
+    }
+    
+    size_t half_order = ((order-1)>>1); // The index of the middle element. eg:  x x x ^ x x x ,which is "3".
+    uint16_t* pCenter = pKernel->pBuffer + (half_order * order) + half_order;
+    double coe        = 1.0/__gussian2D(half_order,half_order,__sigma); // Make sure every element is larger than 0.
+    
+    pKernel->order = order;
+    pKernel->sigma = 0;
+    for(int x=0;x<=half_order;x++){
+        for(int y=0;y<=x;y++){
+            uint16_t temp = lround(coe*__gussian2D(x,y,__sigma));
+            *(pCenter + (y*order) + x) = temp;
+            *(pCenter - (y*order) + x) = temp;
+            *(pCenter + (y*order) - x) = temp;
+            *(pCenter - (y*order) - x) = temp;
+            *(pCenter + (x*order) + y) = temp;
+            *(pCenter - (x*order) + y) = temp;
+            *(pCenter + (x*order) - y) = temp;
+            *(pCenter - (x*order) - y) = temp;
+            if(x == 0 && y == 0)
+                pKernel->sigma += temp;
+            else if( x==0 || y == 0 || x==y )
+                pKernel->sigma += (temp<<2);
+            else
+                pKernel->sigma += (temp<<3);
+            
+        }
+    }
+    return pKernel;
 }
 
 /*=========================================
@@ -445,7 +484,7 @@ __ImageRGB888_t* __Blur_Gussian_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB8
     kernel[0]  = (uint16_t)(100 / (_PI * temp));                       //[0][0]
 
     kernel[1]  = (uint16_t)(100 / (_PI * temp) * exp(-1  / (temp)));   //[1][0]
-    kernel[2]  = (uint16_t)(100 / (_PI * temp) * exp(-2  / (temp)));   //[1][]
+    kernel[2]  = (uint16_t)(100 / (_PI * temp) * exp(-2  / (temp)));   //[1][1]
      
     kernel[3]  = (uint16_t)(100 / (_PI * temp) * exp(-4  / (temp)));   //[2][0]
     kernel[4]  = (uint16_t)(100 / (_PI * temp) * exp(-5  / (temp)));   //[2][1]

@@ -33,8 +33,17 @@
 ======================================================================*/
 long    __sign       (long x);
 long    __sqrt       (long x);
-double  __gussian    (long x,long __miu  ,long __sigma);
-double  __gussian2D  (long x,long y      ,long __sigma);
+double  __gussian    (long x,long __miu  ,double __sigma);
+double  __gussian2D  (long x,long y      ,double __sigma);
+
+ struct __Kernel_t{
+     uint16_t*   pBuffer;
+     size_t      order;
+     uint16_t    sigma;
+ };
+ typedef struct __Kernel_t       __Kernel_t;
+ __Kernel_t* __gussianKernel(double __sigma,size_t order,__Kernel_t* pKernel);
+ 
 /*=====================================================================
  > Quantity Reference 
 ======================================================================*/
@@ -90,11 +99,6 @@ int        __Point_toCircle  (int xc,int yc,int radius,                  int px,
 /*=====================================================================
  > Image Processing Reference 
 ======================================================================*/
-struct __Kernel_t{
-    uint16_t*   pBuffer;
-    size_t order;
-};
-typedef struct __Kernel_t       __Kernel_t;
 
 struct __PixelRGB565_t{
     uint16_t R : 5;
