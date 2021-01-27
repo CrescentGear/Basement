@@ -36,13 +36,13 @@ long    __sqrt       (long x);
 double  __gussian    (long x,long __miu  ,double __sigma);
 double  __gussian2D  (long x,long y      ,double __sigma);
 
- struct __Kernel_t{
-     uint16_t*   pBuffer;
-     size_t      order;
-     uint16_t    sigma;
- };
- typedef struct __Kernel_t       __Kernel_t;
- __Kernel_t* __gussianKernel(double __sigma,size_t order,__Kernel_t* pKernel);
+struct __Kernel_t{
+    uint16_t*   pBuffer;
+    size_t      order;
+    int32_t    sigma;
+};
+typedef struct __Kernel_t       __Kernel_t;
+__Kernel_t* __gussianKernel(double __sigma,size_t order,__Kernel_t* pKernel);
  
 /*=====================================================================
  > Quantity Reference 
@@ -147,7 +147,7 @@ struct __ImageRGB888_t{
 typedef struct __ImageRGB888_t  __ImageRGB888_t;
 
 __ImageRGB888_t* __LoadBMP_ImgRGB888      (const char* __restrict__ path);
-void             __OutBMP_ImgRGB888       (const char* __restrict__ path,__ImageRGB888_t* p);
+__ImageRGB888_t* __OutBMP_ImgRGB888       (const char* __restrict__ path,__ImageRGB888_t* p);
 __ImageRGB888_t* __Create_ImgRGB888       (size_t width,size_t height);
 __ImageRGB888_t* __CopyBMP_ImgRGB888      (const __ImageRGB888_t* src,__ImageRGB888_t* dst);
 

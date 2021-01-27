@@ -345,11 +345,11 @@ __ImageRGB888_t* __LoadBMP_ImgRGB888(const char* __restrict__ path){
         for (int col = 0; col < infoHead.biWidth; col++) {
             fread(&(pIMG->pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].data), sizeof(__PixelRGB888_t), 1, bmp);
 
-//            printf("[%d]: ",(infoHead.biHeight - row - 1)*infoHead.biWidth + col);
-//            printf("R=%d G=%d B=%d\n",\
-//                   pIMG->pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].R,\
-//                   pIMG->pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].G,\
-//                   pIMG->pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].B);
+ //           printf("[%d]: ",(infoHead.biHeight - row - 1)*infoHead.biWidth + col);
+ //           printf("R=%d G=%d B=%d\n",\
+ //                  pIMG->pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].R,\
+ //                  pIMG->pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].G,\
+ //                  pIMG->pBuffer[(infoHead.biHeight - row - 1)*infoHead.biWidth + col].B);
         }
         int eps = (4-(infoHead.biWidth*sizeof(__PixelRGB888_t))%4)%4;
         uint8_t dummyByte;
@@ -387,10 +387,10 @@ __ImageRGB888_t* __Create_ImgRGB888(size_t width,size_t height){
     return pIMG;
 }
 
-void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p){
+__ImageRGB888_t* __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p){
     FILE* bmp;
     if(p == NULL && p->pBuffer == NULL)
-        return;
+        return NULL;
     int eps = (4-(p->width*sizeof(__PixelRGB888_t))%4)%4;
     BITMAPFILEHEADER fileHead = {
         .bfOffBits      = 40 + 14   ,
@@ -415,7 +415,7 @@ void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p){
     printf("%d\n" ,infoHead.biSizeImage    );
     bmp = fopen(path,"wb");
 
-    if(bmp == NULL) return;
+    if(bmp == NULL) return NULL;
 
     // RGB Sequence should be reversed.
     fseek(bmp,0L,SEEK_SET);
@@ -434,7 +434,7 @@ void __OutBMP_ImgRGB888(const char* __restrict__ path,__ImageRGB888_t* p){
     }
     
     fclose(bmp);
-
+    return p;
 }
 
 __ImageRGB888_t* __FreeBuffer_ImgRGB888(__ImageRGB888_t* ptr){
@@ -550,120 +550,115 @@ __ImageRGB888_t* __Blur_Gussian_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB8
         .pBuffer = gus_kernel[0]
     };
     
-    
-    
     return __Conv2D_ImgRGB888(src, dst, &kernel_info, sigma);
 }
 
-__ImageRGB565_t* __Conv2D_ImgRGB565(const __ImageRGB565_t* in,__ImageRGB565_t* out,const __Kernel_t* k,int coe){
-    if( in == NULL || k == NULL){
-        return out;
+__ImageRGB565_t* __Conv2D_ImgRGB565(const __ImageRGB565_t* src,__ImageRGB565_t* dst,const __Kernel_t* k,int div){
+    if( src == NULL || dst == NULL || k == NULL){
+        return NULL;
     }
     
-    if(out == NULL){
-        out = (__ImageRGB565_t*)__malloc(sizeof(__ImageRGB565_t));
-        if(out == NULL) // Not enough space :-(
-            return out;
-        out->pBuffer = (__UNION_PixelRGB565_t*)__malloc(in->width * in->height * sizeof(__UNION_PixelRGB565_t));
-        if(out->pBuffer == NULL) // Not enough space :-(
-            return out;
+    if(dst->pBuffer == NULL){
+        dst->pBuffer = (__UNION_PixelRGB565_t*)__malloc(src->width * src->height * sizeof(__UNION_PixelRGB565_t));
+        if(dst->pBuffer == NULL) // Not enough space :-(
+            return dst;
     }
     
-    if(out->pBuffer == NULL){
-        out->pBuffer = (__UNION_PixelRGB565_t*)__malloc(in->width * in->height * sizeof(__UNION_PixelRGB565_t));
-        if(out->pBuffer == NULL) // Not enough space :-(
-            return out;
+    if(dst->pBuffer == NULL){
+        dst->pBuffer = (__UNION_PixelRGB565_t*)__malloc(src->width * src->height * sizeof(__UNION_PixelRGB565_t));
+        if(dst->pBuffer == NULL) // Not enough space :-(
+            return dst;
     }
 
-    for(int j=0;j<in->height;j++){
-        for(int i=0;i<in->width;i++){
+    for(int j=0;j<src->height;j++){
+        for(int i=0;i<src->width;i++){
             unsigned long tmp_R = 0,tmp_G = 0,tmp_B = 0;
             for(int n=0;n<k->order;n++){
                 for(int m=0;m<k->order;m++){
                     int offset_y = (int)(j-(k->order>>1)+n);
                     int offset_x = (int)(i-(k->order>>1)+m);
-                    if(offset_x<0||offset_y<0||offset_x>=in->width||offset_y>=in->height){
+                    if(offset_x<0||offset_y<0||offset_x>=src->width||offset_y>=src->height){
                          //...//
                         continue;
                     }
-                    unsigned int select_R  = (in->pBuffer + offset_y*in->width + offset_x)->R;
-                    unsigned int select_G  = (in->pBuffer + offset_y*in->width + offset_x)->G;
-                    unsigned int select_B  = (in->pBuffer + offset_y*in->width + offset_x)->B;
+                    unsigned int select_R  = (src->pBuffer + offset_y*src->width + offset_x)->R;
+                    unsigned int select_G  = (src->pBuffer + offset_y*src->width + offset_x)->G;
+                    unsigned int select_B  = (src->pBuffer + offset_y*src->width + offset_x)->B;
                     int       selectKernel = *( k->pBuffer + n       * k->order + m       );
                     tmp_R += ( (select_R) * (selectKernel) );
                     tmp_G += ( (select_G) * (selectKernel) );
                     tmp_B += ( (select_B) * (selectKernel) );
                 }
             }
-            size_t offset = (j*in->width)+i;
-            if(offset < out->width*out->height){
-                (out->pBuffer+offset)->R = tmp_R/coe;//(coe==0)?((1<<5)-1):tmp_R/coe;
-                (out->pBuffer+offset)->G = tmp_G/coe;//(coe==0)?((1<<6)-1):tmp_G/coe;
-                (out->pBuffer+offset)->B = tmp_B/coe;//(coe==0)?((1<<5)-1):tmp_B/coe;
+            size_t offset = (j*src->width)+i;
+            if(offset < dst->width*dst->height){
+                (dst->pBuffer+offset)->R = tmp_R/div;//(div==0)?((1<<5)-1):tmp_R/div;
+                (dst->pBuffer+offset)->G = tmp_G/div;//(div==0)?((1<<6)-1):tmp_G/div;
+                (dst->pBuffer+offset)->B = tmp_B/div;//(div==0)?((1<<5)-1):tmp_B/div;
             }
         }
     }
-    return out;
+    return dst;
 }
 
-__ImageRGB888_t* __Conv2D_ImgRGB888(const __ImageRGB888_t* in,__ImageRGB888_t* out,const __Kernel_t* k,int coe){
-    if( in == NULL || k == NULL){
-        return out;
+__ImageRGB888_t* __Conv2D_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB888_t* dst,const __Kernel_t* k,int div){
+    if( src == NULL || k == NULL){
+        return dst;
     }
     
-    if(out == NULL){
-        out = (__ImageRGB888_t*)__malloc(sizeof(__ImageRGB888_t));
-        if(out == NULL) // Not enough space :-(
-            return out;
-        out->pBuffer = (__UNION_PixelRGB888_t*)__malloc(in->width * in->height * sizeof(__UNION_PixelRGB888_t));
-        if(out->pBuffer == NULL) // Not enough space :-(
-            return out;
+    if(dst == NULL){
+        dst = (__ImageRGB888_t*)__malloc(sizeof(__ImageRGB888_t));
+        if(dst == NULL) // Not enough space :-(
+            return dst;
+        dst->pBuffer = (__UNION_PixelRGB888_t*)__malloc(src->width * src->height * sizeof(__UNION_PixelRGB888_t));
+        if(dst->pBuffer == NULL) // Not enough space :-(
+            return dst;
     }
     
-    if(out->pBuffer == NULL){
-        out->pBuffer = (__UNION_PixelRGB888_t*)__malloc(in->width * in->height * sizeof(__UNION_PixelRGB888_t));
-        if(out->pBuffer == NULL) // Not enough space :-(
-            return out;
+    if(dst->pBuffer == NULL){
+        dst->pBuffer = (__UNION_PixelRGB888_t*)__malloc(src->width * src->height * sizeof(__UNION_PixelRGB888_t));
+        if(dst->pBuffer == NULL) // Not enough space :-(
+            return dst;
     }
     
-    if(out == NULL){
-        out = (__ImageRGB888_t*)__malloc(sizeof(__ImageRGB888_t));
-        if(out == NULL) // Not enough space :-(
-            return out;
-        out->pBuffer = (__UNION_PixelRGB888_t*)__malloc(in->width * in->height * sizeof(__UNION_PixelRGB888_t));
+    if(dst == NULL){
+        dst = (__ImageRGB888_t*)__malloc(sizeof(__ImageRGB888_t));
+        if(dst == NULL) // Not enough space :-(
+            return dst;
+        dst->pBuffer = (__UNION_PixelRGB888_t*)__malloc(src->width * src->height * sizeof(__UNION_PixelRGB888_t));
     }
 
-    for(int j=0;j<in->height;j++){
-        for(int i=0;i<in->width;i++){
+    for(int j=0;j<src->height;j++){
+        for(int i=0;i<src->width;i++){
             
             unsigned long tmp_R = 0,tmp_G = 0,tmp_B = 0;
             for(int n=0;n<k->order;n++){
                 for(int m=0;m<k->order;m++){
                     size_t offset_y = j-(k->order>>1)+n;
                     size_t offset_x = i-(k->order>>1)+m;
-                    if(offset_x<0||offset_y<0||offset_x>=in->width||offset_y>=in->height){
+                    if(offset_x<0||offset_y<0||offset_x>=src->width||offset_y>=src->height){
                          //... //
                         continue;
                     }
-                    unsigned int select_R  = (in->pBuffer + offset_y*in->width + offset_x)->R;
-                    unsigned int select_G  = (in->pBuffer + offset_y*in->width + offset_x)->G;
-                    unsigned int select_B  = (in->pBuffer + offset_y*in->width + offset_x)->B;
+                    unsigned int select_R  = (src->pBuffer + offset_y*src->width + offset_x)->R;
+                    unsigned int select_G  = (src->pBuffer + offset_y*src->width + offset_x)->G;
+                    unsigned int select_B  = (src->pBuffer + offset_y*src->width + offset_x)->B;
                     int       selectKernel = *( k->pBuffer + n       * k->order + m       );
                     tmp_R += ( (select_R) * (selectKernel) );
                     tmp_G += ( (select_G) * (selectKernel) );
                     tmp_B += ( (select_B) * (selectKernel) );
                 }
             }
-            size_t offset = (j*in->width)+i;
-            if(offset < out->width*out->height){
-                (out->pBuffer+offset)->R = tmp_R/coe;//(coe==0)?((1<<8)-1):tmp_R/coe;
-                (out->pBuffer+offset)->G = tmp_G/coe;//(coe==0)?((1<<8)-1):tmp_G/coe;
-                (out->pBuffer+offset)->B = tmp_B/coe;//(coe==0)?((1<<8)-1):tmp_B/coe;
+            size_t offset = (j*src->width)+i;
+            if(offset < dst->width*dst->height){
+                (dst->pBuffer+offset)->R = tmp_R/div;//(div==0)?((1<<8)-1):tmp_R/div;
+                (dst->pBuffer+offset)->G = tmp_G/div;//(div==0)?((1<<8)-1):tmp_G/div;
+                (dst->pBuffer+offset)->B = tmp_B/div;//(div==0)?((1<<8)-1):tmp_B/div;
             }
         }
     }
     
-    return out;
+    return dst;
 }
 
 /*=========================================
@@ -814,5 +809,11 @@ void* __memsetDWORD(void* __b,long value,size_t num){
     return __b;
 }
 
-
+#if 1
+int main(int argc, char const *argv[])
+{
+    /* code */
+    return 0;
+}
+#endif
 
