@@ -5,14 +5,25 @@
 #include <stdbool.h>
 #include <math.h>
 
-/*=========================================
+/*===========================================================================================================================
  > Common 
-==========================================*/
+============================================================================================================================*/
+#ifndef M_2_SQRTPI
+#define M_2_SQRTPI  1.12837916709551257389615890312154517   /* 2/sqrt(pi)     */
+#endif
+
+#ifndef M_SQRT2
+#define M_SQRT2     1.41421356237309504880168872420969808   /* sqrt(2)        */
+#endif
+
+#ifndef M_PI
+#define M_PI        3.14159265358979323846264338327950288   /* pi             */
+#endif
 
 
-/*=========================================
+/*===========================================================================================================================
  > Algebra Reference 
-==========================================*/
+============================================================================================================================*/
 
 long __sign(long x){
     return (x>=0)?(1):(-1);
@@ -36,18 +47,6 @@ long __sqrt(long x){
         return res;
     return (res+1);
 }
-
-#ifndef M_2_SQRTPI
-#define M_2_SQRTPI  1.12837916709551257389615890312154517   /* 2/sqrt(pi)     */
-#endif
-
-#ifndef M_SQRT2
-#define M_SQRT2     1.41421356237309504880168872420969808   /* sqrt(2)        */
-#endif
-
-#ifndef M_PI
-#define M_PI        3.14159265358979323846264338327950288   /* pi             */
-#endif
 
 double __gussian(long x,long __miu,double __sigma){
 // Same Effect but slower,only suitable when __sigma is a value of double.
@@ -102,9 +101,9 @@ __Kernel_t* __gussianKernel(double __sigma,size_t order,__Kernel_t* pKernel){
     return pKernel;
 }
 
-/*=========================================
+/*===========================================================================================================================
  > Quantity Reference 
-==========================================*/
+============================================================================================================================*/
 
 struct IntArray_t __findMax_INT(const int* pValue,size_t num){
     int max = *pValue;
@@ -133,9 +132,9 @@ struct IntArray_t __findMin_INT(const int* pValue,size_t num){
 }
 
 
-/*=========================================
+/*===========================================================================================================================
  > Geometry Reference 
-==========================================*/
+============================================================================================================================*/
 
 Point3D_t __findPoint_VectorDistance (const Point3D_t*  A,const Point3D_t*  B,int dist_AP){ 
     long dist_AB = lroundl(sqrt( (B->x - A->x)*(B->x - A->x) + \
@@ -266,9 +265,9 @@ int __Point_toCircle(int xc,int yc,int radius,int px,int py){
         return 0;
 }
 
-/*=========================================
+/*===========================================================================================================================
  > Image Processing Reference 
-==========================================*/
+============================================================================================================================*/
 #if defined    (_WIN32)
 #include <windows.h>
 #elif defined  (__APPLE__)
@@ -449,31 +448,35 @@ void __Free_ImgRGB888(__ImageRGB888_t* ptr){
     __free(__FreeBuffer_ImgRGB888(ptr));
 }
 
-__ImageRGB888_t* __Filter_Gray_ImgRGB888(const __ImageRGB888_t* in,__ImageRGB888_t* out){
+__ImageRGB888_t* __Filter_Gray_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB888_t* dst){
     
-    if(in != NULL && out != NULL){
-        if(in->pBuffer != NULL && out->pBuffer != NULL){
-            for (int row = 0; row < in->height; row++) {
-                for (int col = 0; col < in->width; col++) {
-                    long temp = lroundl(0.299 * in->pBuffer[row * in->width + col].R + 0.587 * in->pBuffer[row * in->width + col].G + 0.114 * in->pBuffer[row * in->width + col].B);
-                    out->pBuffer[row * in->width + col].data = (uint32_t)(((temp&0xff)<<16)|((temp&0xff)<<8)|((temp&0xff)));
+    if(src != NULL && dst != NULL){
+        if(src->pBuffer != NULL && dst->pBuffer != NULL){
+            for (int row = 0; row < src->height; row++) {
+                for (int col = 0; col < src->width; col++) {
+                    long temp = lroundl(0.299 * src->pBuffer[row * src->width + col].R + 0.587 * src->pBuffer[row * src->width + col].G + 0.114 * src->pBuffer[row * src->width + col].B);
+                    dst->pBuffer[row * src->width + col].data = (uint32_t)(((temp&0xff)<<16)|((temp&0xff)<<8)|((temp&0xff)));
                 }
             }
         }
     }
-    return out;
+    return dst;
 }
 
-__ImageRGB888_t* __Filter_Warm_ImgRGB888(const __ImageRGB888_t* in,__ImageRGB888_t* out){
-    return out;
+__ImageRGB888_t* __Filter_Warm_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB888_t* dst){
+    return dst;
 }
 
-__ImageRGB888_t* __Filter_Cold_ImgRGB888(const __ImageRGB888_t* in,__ImageRGB888_t* out){
+__ImageRGB888_t* __Filter_Cold_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB888_t* dst){
     
-    return out;
+    return dst;
 }
 
-__ImageRGB888_t* __Blur_Gussian_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB888_t* dst,unsigned int _0_100_){
+__ImageRGB888_t* __Filter_OTUS_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB888_t* dst){
+    return NULL;
+}
+
+__ImageRGB888_t* __Blur_Gussian_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB888_t* dst,unsigned int _0_65535_){
     int      kernel[1+2+3+4+5] = {0};
     uint16_t gus_kernel[9][9];
     
@@ -481,25 +484,25 @@ __ImageRGB888_t* __Blur_Gussian_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB8
         
     double temp = 12.8;
      
-    kernel[0]  = (uint16_t)(100 / (_PI * temp));                       //[0][0]
+    kernel[0]  = (uint16_t)(100 / (M_PI * temp));                       //[0][0]
 
-    kernel[1]  = (uint16_t)(100 / (_PI * temp) * exp(-1  / (temp)));   //[1][0]
-    kernel[2]  = (uint16_t)(100 / (_PI * temp) * exp(-2  / (temp)));   //[1][1]
+    kernel[1]  = (uint16_t)(100 / (M_PI * temp) * exp(-1  / (temp)));   //[1][0]
+    kernel[2]  = (uint16_t)(100 / (M_PI * temp) * exp(-2  / (temp)));   //[1][1]
      
-    kernel[3]  = (uint16_t)(100 / (_PI * temp) * exp(-4  / (temp)));   //[2][0]
-    kernel[4]  = (uint16_t)(100 / (_PI * temp) * exp(-5  / (temp)));   //[2][1]
-    kernel[5]  = (uint16_t)(100 / (_PI * temp) * exp(-8  / (temp)));   //[2][2]
+    kernel[3]  = (uint16_t)(100 / (M_PI * temp) * exp(-4  / (temp)));   //[2][0]
+    kernel[4]  = (uint16_t)(100 / (M_PI * temp) * exp(-5  / (temp)));   //[2][1]
+    kernel[5]  = (uint16_t)(100 / (M_PI * temp) * exp(-8  / (temp)));   //[2][2]
     
-    kernel[6]  = (uint16_t)(100 / (_PI * temp) * exp(-9  / (temp)));   //[3][0]
-    kernel[7]  = (uint16_t)(100 / (_PI * temp) * exp(-10 / (temp)));   //[3][1]
-    kernel[8]  = (uint16_t)(100 / (_PI * temp) * exp(-13 / (temp)));   //[3][2]
-    kernel[9]  = (uint16_t)(100 / (_PI * temp) * exp(-18 / (temp)));   //[3][3]
+    kernel[6]  = (uint16_t)(100 / (M_PI * temp) * exp(-9  / (temp)));   //[3][0]
+    kernel[7]  = (uint16_t)(100 / (M_PI * temp) * exp(-10 / (temp)));   //[3][1]
+    kernel[8]  = (uint16_t)(100 / (M_PI * temp) * exp(-13 / (temp)));   //[3][2]
+    kernel[9]  = (uint16_t)(100 / (M_PI * temp) * exp(-18 / (temp)));   //[3][3]
     
-    kernel[10] = (uint16_t)(100 / (_PI * temp) * exp(-16 / (temp)));   //[4][0]
-    kernel[11] = (uint16_t)(100 / (_PI * temp) * exp(-17 / (temp)));   //[4][1]
-    kernel[12] = (uint16_t)(100 / (_PI * temp) * exp(-20 / (temp)));   //[4][2]
-    kernel[13] = (uint16_t)(100 / (_PI * temp) * exp(-25 / (temp)));   //[4][3]
-    kernel[14] = (uint16_t)(100 / (_PI * temp) * exp(-32 / (temp)));   //[4][4]
+    kernel[10] = (uint16_t)(100 / (M_PI * temp) * exp(-16 / (temp)));   //[4][0]
+    kernel[11] = (uint16_t)(100 / (M_PI * temp) * exp(-17 / (temp)));   //[4][1]
+    kernel[12] = (uint16_t)(100 / (M_PI * temp) * exp(-20 / (temp)));   //[4][2]
+    kernel[13] = (uint16_t)(100 / (M_PI * temp) * exp(-25 / (temp)));   //[4][3]
+    kernel[14] = (uint16_t)(100 / (M_PI * temp) * exp(-32 / (temp)));   //[4][4]
     
     sigma += kernel[0];        // 1
     sigma += (kernel[1]) << 2; // 4
@@ -551,6 +554,58 @@ __ImageRGB888_t* __Blur_Gussian_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB8
     };
     
     return __Conv2D_ImgRGB888(src, dst, &kernel_info, sigma);
+}
+
+__ImageRGB888_t* __Blur_Average_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB888_t* dst,unsigned int _0_65535_){
+    return NULL;
+}
+
+__ImageRGB888_t* __Interpo_NstNeighbor_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB888_t* dst,size_t height,size_t width){
+    if(src == NULL || dst == NULL) // Bad address
+        return NULL;
+    if(height < src->height || width < src->width) // Image of "dst" should be larger than image of "src" in both dimension.
+        return NULL;
+    if(src->pBuffer == NULL) // Bad address
+        return NULL;
+    if(dst->pBuffer == NULL){
+        dst->pBuffer = (__UNION_PixelRGB888_t*)__malloc(width*height*sizeof(__UNION_PixelRGB888_t));
+        if(dst->pBuffer == NULL){
+            return NULL;  // There is no space to malloc.
+        }
+    }
+    dst->height = height;
+    dst->width  = width;
+    memset(dst->pBuffer, 0, width*height*sizeof(__UNION_PixelRGB888_t));
+    
+    size_t eps_x = 0; // Record errors no bigger than width.
+    size_t eps_y = 0; // Record errors no bigger than height.
+    size_t fx    = 0; // Pixel cordination of original image in x direction.
+    size_t fy    = 0; // Pixel cordination of original image in y direction.
+    for(size_t gy=0;gy<height;gy++){
+        eps_y += src->height;
+        if(eps_y >= height){
+            fx = 0;
+            for(size_t gx=0;gx<width;gx++){
+                eps_x += src->width;
+                if( eps_x >= width ){
+                    // This is the position to copy pixels from original image.
+                    (dst->pBuffer + (width*gy) + gx)->data = (src->pBuffer + (src->width*fy) + fx)->data;
+//                    printf("%ld,%ld ",fx,fy);
+                    eps_x-=width;
+                    fx++;
+                }else{
+                    // This is the position needs to interpolate.
+                    //...//
+                }
+            }
+//            printf("\n");
+            eps_y -= height;
+            fy++;
+        }else
+            continue;
+    }
+    
+    return dst;
 }
 
 __ImageRGB565_t* __Conv2D_ImgRGB565(const __ImageRGB565_t* src,__ImageRGB565_t* dst,const __Kernel_t* k,int div){
@@ -661,9 +716,9 @@ __ImageRGB888_t* __Conv2D_ImgRGB888(const __ImageRGB888_t* src,__ImageRGB888_t* 
     return dst;
 }
 
-/*=========================================
+/*===========================================================================================================================
  > Memory Programming Reference 
-==========================================*/
+============================================================================================================================*/
 
 #define __ADR_DISTANCE( ptr1 , ptr2 )   (size_t)((__abs(ptr2 - ptr1)) - 1)
 
@@ -809,7 +864,7 @@ void* __memsetDWORD(void* __b,long value,size_t num){
     return __b;
 }
 
-#if 1
+#if 0
 int main(int argc, char const *argv[])
 {
     /* code */

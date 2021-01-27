@@ -16,11 +16,6 @@
 
 #define __abs(val)                           (((val)>0)?(val):(-(val)))
 
-#define _PI                                  (3.141592654) 
-#define _2PI                                 (6.283185307)
-#define _EXP                                 (2.718281828)
-#define _SQRT_2PI                            (2.506628275)
-
 
 #pragma anon_unions
 
@@ -146,18 +141,26 @@ struct __ImageRGB888_t{
 };
 typedef struct __ImageRGB888_t  __ImageRGB888_t;
 
-__ImageRGB888_t* __LoadBMP_ImgRGB888      (const char* __restrict__ path);
-__ImageRGB888_t* __OutBMP_ImgRGB888       (const char* __restrict__ path,__ImageRGB888_t* p);
-__ImageRGB888_t* __Create_ImgRGB888       (size_t width,size_t height);
-__ImageRGB888_t* __CopyBMP_ImgRGB888      (const __ImageRGB888_t* src,__ImageRGB888_t* dst);
+__ImageRGB888_t* __LoadBMP_ImgRGB888             (const char* __restrict__ path);
+__ImageRGB888_t* __OutBMP_ImgRGB888              (const char* __restrict__ path,__ImageRGB888_t* p);
+__ImageRGB888_t* __Create_ImgRGB888              (size_t width,size_t height);
+__ImageRGB888_t* __CopyBMP_ImgRGB888             (const __ImageRGB888_t* src,__ImageRGB888_t* dst);
 
-__ImageRGB888_t* __FreeBuffer_ImgRGB888   (__ImageRGB888_t* ptr);
-void             __Free_ImgRGB888         (__ImageRGB888_t* ptr);
+__ImageRGB888_t* __FreeBuffer_ImgRGB888          (__ImageRGB888_t* ptr);
+void             __Free_ImgRGB888                (__ImageRGB888_t* ptr);
 
-__ImageRGB888_t* __Filter_Gray_ImgRGB888  (const __ImageRGB888_t* src,__ImageRGB888_t* dst);
-__ImageRGB888_t* __Blur_Gussian_ImgRGB888 (const __ImageRGB888_t* src,__ImageRGB888_t* dst,unsigned int _0_100_);
-__ImageRGB565_t* __Conv2D_ImgRGB565       (const __ImageRGB565_t* src,__ImageRGB565_t* dst,const __Kernel_t* k,int coe);
-__ImageRGB888_t* __Conv2D_ImgRGB888       (const __ImageRGB888_t* src,__ImageRGB888_t* dst,const __Kernel_t* k,int coe);
+__ImageRGB888_t* __Filter_Gray_ImgRGB888         (const __ImageRGB888_t* src,__ImageRGB888_t* dst); //
+__ImageRGB888_t* __Filter_Cold_ImgRGB888         (const __ImageRGB888_t* src,__ImageRGB888_t* dst); //
+__ImageRGB888_t* __Filter_Warm_ImgRGB888         (const __ImageRGB888_t* src,__ImageRGB888_t* dst); //
+__ImageRGB888_t* __Filter_OTUS_ImgRGB888         (const __ImageRGB888_t* src,__ImageRGB888_t* dst); //
+ 
+__ImageRGB888_t* __Blur_Gussian_ImgRGB888        (const __ImageRGB888_t* src,__ImageRGB888_t* dst,unsigned int _0_65535_); //
+__ImageRGB888_t* __Blur_Average_ImgRGB888        (const __ImageRGB888_t* src,__ImageRGB888_t* dst,unsigned int _0_65535_); //
+
+__ImageRGB888_t* __Interpo_NstNeighbor_ImgRGB888 (const __ImageRGB888_t* src,__ImageRGB888_t* dst,size_t height,size_t width); //
+
+__ImageRGB565_t* __Conv2D_ImgRGB565              (const __ImageRGB565_t* src,__ImageRGB565_t* dst,const __Kernel_t* k,int div);
+__ImageRGB888_t* __Conv2D_ImgRGB888              (const __ImageRGB888_t* src,__ImageRGB888_t* dst,const __Kernel_t* k,int div);
 
 
 /*=====================================================================
@@ -165,12 +168,13 @@ __ImageRGB888_t* __Conv2D_ImgRGB888       (const __ImageRGB888_t* src,__ImageRGB
 ======================================================================*/
 #define __malloc(x)                    malloc(x)//__mallocHEAP(x)
 #define __free(x)                      free(x)//__freeHEAP(x)
-#define __VIRTUAL_HEAP_SIZE_BYTE    (1<<20)
+#define __VIRTUAL_HEAP_SIZE_BYTE       (1<<20)
  
 void* __mallocHEAP(size_t size);
 void  __freeHEAP(void* ptr);
-void* __memsetWORD(void* __b,int value,size_t num);
-
+void* __memsetWORD  (void* __b, int  value, size_t num);
+void* __memsetDWORD (void* __b, long value, size_t num);
+ 
 #ifdef __cplusplus
  }
 #endif
