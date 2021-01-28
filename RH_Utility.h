@@ -5,23 +5,24 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#if defined (_WIN32)
-#include <windows.h>
-#endif
-
-#define __map(val,i_min,i_max,o_min,o_max)   (double)( ( ((double)o_max)*(((double)val)-((double)i_min))+((double)o_min)*((double)(i_max)-(double)(val)) )/((double)(i_max)-(double)(i_min)) )
-
-#define __round(a)                           (int)((a)+0.5)>(int)(a)?((int)(a)+1):((int)(a))
-#define __round1000(a)                       (double)((__round((a)*1000.0))/1000.0)
-
-#define __abs(val)                           (((val)>0)?(val):(-(val)))
-
-
-#pragma anon_unions
-
 #ifdef __cplusplus
  extern "C" {
 #endif
+
+
+/*=====================================================================
+ > Common
+======================================================================*/
+
+#define __map(val,i_min,i_max,o_min,o_max)   (double)( ( ((double)o_max)*(((double)val)-((double)i_min))+((double)o_min)*((double)(i_max)-(double)(val)) )/((double)(i_max)-(double)(i_min)) )
+
+#define __abs(val)                           (((val)>0)?(val):(-(val)))
+
+//#define __round(a)                           (int)((a)+0.5)>(int)(a)?((int)(a)+1):((int)(a))
+//#define __round1000(a)                       (double)((__round((a)*1000.0))/1000.0)
+
+
+#pragma anon_unions
 
 /*=====================================================================
  > Algebra Reference 
@@ -32,9 +33,9 @@ double  __gussian    (long x,long __miu  ,double __sigma);
 double  __gussian2D  (long x,long y      ,double __sigma);
 
 struct __Kernel_t{
-    uint16_t*   pBuffer;
+    uint16_t*   pBuffer; //  <- This buffer array should only be created by "__malloc".
     size_t      order;
-    int32_t    sigma;
+    int32_t     sum;
 };
 typedef struct __Kernel_t       __Kernel_t;
 __Kernel_t* __gussianKernel(double __sigma,size_t order,__Kernel_t* pKernel);
@@ -154,13 +155,13 @@ __ImageRGB888_t* __Filter_Cold_ImgRGB888         (const __ImageRGB888_t* src,__I
 __ImageRGB888_t* __Filter_Warm_ImgRGB888         (const __ImageRGB888_t* src,__ImageRGB888_t* dst); //
 __ImageRGB888_t* __Filter_OTUS_ImgRGB888         (const __ImageRGB888_t* src,__ImageRGB888_t* dst); //
  
-__ImageRGB888_t* __Blur_Gussian_ImgRGB888        (const __ImageRGB888_t* src,__ImageRGB888_t* dst,unsigned int _0_65535_); //
-__ImageRGB888_t* __Blur_Average_ImgRGB888        (const __ImageRGB888_t* src,__ImageRGB888_t* dst,unsigned int _0_65535_); //
+__ImageRGB888_t* __Blur_Gussian_ImgRGB888        (const __ImageRGB888_t* src,__ImageRGB888_t* dst,unsigned int _0_65535_);
+__ImageRGB888_t* __Blur_Average_ImgRGB888        (const __ImageRGB888_t* src,__ImageRGB888_t* dst,unsigned int _0_65535_);
 
 __ImageRGB888_t* __Interpo_NstNeighbor_ImgRGB888 (const __ImageRGB888_t* src,__ImageRGB888_t* dst,size_t height,size_t width); //
 
-__ImageRGB565_t* __Conv2D_ImgRGB565              (const __ImageRGB565_t* src,__ImageRGB565_t* dst,const __Kernel_t* k,int div);
-__ImageRGB888_t* __Conv2D_ImgRGB888              (const __ImageRGB888_t* src,__ImageRGB888_t* dst,const __Kernel_t* k,int div);
+__ImageRGB565_t* __Conv2D_ImgRGB565              (const __ImageRGB565_t* src,__ImageRGB565_t* dst,const __Kernel_t* k);
+__ImageRGB888_t* __Conv2D_ImgRGB888              (const __ImageRGB888_t* src,__ImageRGB888_t* dst,const __Kernel_t* k);
 
 
 /*=====================================================================
