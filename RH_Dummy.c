@@ -1,4 +1,4 @@
-
+#include "RH_Utility.h"
 /*=================================================================================================
  > This part of code will never be compiled.
 ===================================================================================================*/
@@ -76,6 +76,126 @@
 
     printf("sigma = %d\n",sigma);
 
+
+// Dummy Segment for Digital Fourier Transform
+void __DFT_Float(const float_t* src,float_t* dst,size_t dftLen){
+    __ComplexFLOAT_t* pTmp = (__ComplexFLOAT_t*)__malloc(dftLen*sizeof(__ComplexFLOAT_t));
+    memset(pTmp,0,dftLen*sizeof(__ComplexFLOAT_t));
+    for(size_t k=0;k<dftLen;k++){
+        for(size_t n=0;n<dftLen;n++){
+            pTmp[k].real += src[n]*cos(2*M_PI*k*n/dftLen);
+            pTmp[k].imag += src[n]*sin(2*M_PI*k*n/dftLen);
+        }
+        dst[k] = sqrt(pTmp[k].real*pTmp[k].real+pTmp[k].imag*pTmp[k].imag);
+        printf("%f + \tj*%f\n",pTmp[k].real,pTmp[k].imag);
+    }
+    __free(pTmp);
+}
+
+
+for(size_t k=0;k<((dftLen+2)>>1);k++){
+    for(size_t n=0;n<dftLen;n++){
+        pClx[k].real += src[n]*cos(2*M_PI*k*n/dftLen);
+        pClx[k].imag += src[n]*sin(2*M_PI*k*n/dftLen);
+    }
+    if(dst_m != NULL)
+        dst_m[k] = sqrt(pClx[k].real*pClx[k].real+pClx[k].imag*pClx[k].imag);
+    
+    // Since the result of DFT is symmetrical, just copy the previous value.
+    if(k!=0){
+        pClx[dftLen-k].real =   pClx[k].real;
+        pClx[dftLen-k].imag = - pClx[k].imag;
+        if(dst_m != NULL)
+            dst_m [dftLen-k]    =   dst_m[k];
+    }
+    
+}
+
+
+void __cDFT_Float(const __ComplexFLOAT_t* src,float_t* dst_m,__ComplexFLOAT_t* dst_c,size_t dftLen){
+    __ComplexFLOAT_t* pClx = dst_c;
+    if( (dst_m == NULL && dst_c == NULL) || src == NULL)
+        return;
+    if( pClx == NULL ){
+        pClx = (__ComplexFLOAT_t*)__malloc(dftLen*sizeof(__ComplexFLOAT_t));
+        if( pClx == NULL ){
+            return;
+        }
+    }
+    
+    memset(pClx,0,dftLen*sizeof(__ComplexFLOAT_t));
+    for(size_t k=0;k<dftLen;k++){
+        for(size_t n=0;n<dftLen;n++){
+            double temp = 2*M_PI*k*n/((double)(dftLen));
+            pClx[k].real += src[n].real*cos(temp) + src[n].imag*sin(temp);
+            pClx[k].imag += src[n].imag*cos(temp) - src[n].real*sin(temp);
+        }
+        if(dst_m != NULL)
+            dst_m[k] = sqrt(pClx[k].real*pClx[k].real+pClx[k].imag*pClx[k].imag);
+    }
+    
+//    for(size_t k=0;k<dftLen;k++)
+//        printf("| %.4f + j* %.4f | = \t%f\n",pClx[k].real,pClx[k].imag,dst_m[k]);
+    if(dst_c == NULL)
+        __free(pClx);
+}
+
+
+void __cIDFT_Float(const __ComplexFLOAT_t* src,float_t* dst_m,__ComplexFLOAT_t* dst_c,size_t dftLen){
+    __ComplexFLOAT_t* pClx = dst_c;
+    if( (dst_m == NULL&& dst_c == NULL) || src == NULL )
+        return;
+    if( pClx == NULL ){
+        pClx = (__ComplexFLOAT_t*)__malloc(dftLen*sizeof(__ComplexFLOAT_t));
+    }
+    memset(pClx,0,dftLen*sizeof(__ComplexFLOAT_t));
+    
+    for(size_t k=0;k<dftLen;k++){
+        for(size_t n=0;n<dftLen;n++){
+            double temp = 2*M_PI*k*n/((double)(dftLen));
+            pClx[k].real += src[n].real*cos(temp) - src[n].imag*sin(temp);
+            pClx[k].imag += src[n].imag*cos(temp) + src[n].real*sin(temp);
+        }
+        pClx[k].real = pClx[k].real/(double)(dftLen);
+        pClx[k].imag = pClx[k].imag/(double)(dftLen);
+        if(dst_m != NULL)
+            dst_m[k] = sqrt(pClx[k].real*pClx[k].real+pClx[k].imag*pClx[k].imag);
+        
+    }
+    
+//    for(size_t k=0;k<dftLen;k++)
+//        printf("| %f + \tj*%f | = \t%f\n",pClx[k].real,pClx[k].imag,dst_m[k]);
+    if(dst_c == NULL)
+        __free(pClx);
+}
+
+void __cDFT_Float(const __ComplexFLOAT_t* src,float_t* dst_m,__ComplexFLOAT_t* dst_c,size_t dftLen){
+    __ComplexFLOAT_t* pClx = dst_c;
+    if( (dst_m == NULL && dst_c == NULL) || src == NULL)
+        return;
+    if( pClx == NULL ){
+        pClx = (__ComplexFLOAT_t*)__malloc(dftLen*sizeof(__ComplexFLOAT_t));
+        if( pClx == NULL ){
+            return;
+        }
+    }
+    
+    memset(pClx,0,dftLen*sizeof(__ComplexFLOAT_t));
+    for(size_t k=0;k<dftLen;k++){
+        for(size_t n=0;n<dftLen;n++){
+            double temp = 2*M_PI*k*n/((double)(dftLen));
+            pClx[k].real += src[n].real*cos(temp) + src[n].imag*sin(temp);
+            pClx[k].imag += src[n].imag*cos(temp) - src[n].real*sin(temp);
+        }
+        if(dst_m != NULL)
+            dst_m[k] = sqrt(pClx[k].real*pClx[k].real+pClx[k].imag*pClx[k].imag);
+    }
+    
+//    for(size_t k=0;k<dftLen;k++)
+//        printf("| %.4f + j* %.4f | = \t%f\n",pClx[k].real,pClx[k].imag,dst_m[k]);
+    if(dst_c == NULL)
+        __free(pClx);
+}
 
 #endif
 

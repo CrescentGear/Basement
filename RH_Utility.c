@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <math.h>
 
 /*===========================================================================================================================
  > Common 
@@ -264,6 +263,116 @@ int __Point_toCircle(int xc,int yc,int radius,int px,int py){
     else
         return 0;
 }
+
+/*===========================================================================================================================
+ > DSP Reference
+============================================================================================================================*/
+
+void __rDFT_Float(const float_t* src,float_t* dst_m,__ComplexFLOAT_t* dst_c,size_t dftLen){
+    __ComplexFLOAT_t* pClx = dst_c;
+    if( (dst_m == NULL && dst_c == NULL) || src == NULL)
+        return;
+    if( pClx == NULL ){
+        pClx = (__ComplexFLOAT_t*)__malloc(dftLen*sizeof(__ComplexFLOAT_t));
+        if( pClx == NULL ){
+            return;
+        }
+    }
+    memset(pClx,0,dftLen*sizeof(__ComplexFLOAT_t));
+    
+    for(size_t k=0;k<((dftLen+2)>>1);k++){
+        for(size_t n=0;n<dftLen;n++){
+            double temp = 2*M_PI*k*n/dftLen;
+            pClx[k].real += src[n]*cos(temp);
+            pClx[k].imag += src[n]*sin(temp);
+        }
+        if(dst_m != NULL)
+            dst_m[k] = sqrt(pClx[k].real*pClx[k].real+pClx[k].imag*pClx[k].imag);
+        
+        // Since the result of DFT is symmetrical, just copy the previous value.
+        if(k!=0){
+            pClx[dftLen-k].real =   pClx[k].real;
+            pClx[dftLen-k].imag = - pClx[k].imag;
+            if(dst_m != NULL)
+                dst_m [dftLen-k]    =   dst_m[k];
+        }
+        
+    }
+//    for(size_t k=0;k<dftLen;k++)
+//        printf("| %f + \tj*%f | = \t%f\n",pClx[k].real,pClx[k].imag,dst_m[k]);
+    if(dst_c == NULL)
+        __free(pClx);
+    
+}
+
+void __rFFT_Float(const float_t* src,float_t* dst_m,__ComplexFLOAT_t* dst_c,size_t dftLen){
+    
+}
+
+void __cDFT_Float(const float complex* src,float_t* dst_m,float complex* dst_c,size_t dftLen){
+    float complex*        X = dst_c;
+    const float complex* _x = src;
+    if( (dst_m == NULL && dst_c == NULL) || src == NULL)
+        return;
+    if( X == NULL ){
+        X = (float complex*)__malloc(dftLen*sizeof(float complex));
+        if( X == NULL ){
+            return;
+        }
+    }
+    
+    memset(X,0,dftLen*sizeof(sizeof(float complex)));
+    
+    for(size_t k=0;k<dftLen;k++){
+        for(size_t n=0;n<dftLen;n++){
+            double        wt  = 2*M_PI*k*n/((double)(dftLen));
+            X[k] += _x[n] * (cos(wt) - sin(wt)*I);
+        }
+        if(dst_m != NULL)
+            dst_m[k] = sqrt(creal(X[k])*creal(X[k]) + cimag(X[k])*cimag(X[k]));
+    }
+    
+    for(size_t k=0;k<dftLen;k++)
+        printf("| %.4f + j* %.4f | = \t%f\n",creal(X[k]),cimag(X[k]),dst_m[k]);
+    
+    if(dst_c == NULL)
+        __free(X);
+}
+
+void __rIDFT_Float(const float_t* src,float_t* dst_m,__ComplexFLOAT_t* dst_c,size_t dftLen){
+    
+}
+
+void __cIDFT_Float(const float complex* src,float_t* dst_m,float complex* dst_c,size_t dftLen){
+    float complex*       _x   = dst_c;
+    const float complex* X    = src;
+    if( (dst_m == NULL&& dst_c == NULL) || src == NULL )
+        return;
+    if( _x == NULL ){
+        _x = (float complex*)__malloc(dftLen*sizeof(float complex));
+    }
+    memset(_x,0,dftLen*sizeof(float complex));
+    
+    for(size_t k=0;k<dftLen;k++){
+        for(size_t n=0;n<dftLen;n++){
+            double wt = 2*M_PI*k*n/((double)(dftLen));
+            _x[k]  += X[n] * (cos(wt) + sin(wt)*I);
+        }
+        
+        _x[k] /= (double)(dftLen);
+        
+        if(dst_m != NULL)
+            dst_m[k] = sqrt(creal(_x[k])*creal(_x[k])+cimag(_x[k])*cimag(_x[k]));
+        
+    }
+    
+    for(size_t k=0;k<dftLen;k++)
+        printf("| %.4f + \tj*%.4f | = \t%.4f\n",creal(_x[k]),cimag(_x[k]),dst_m[k]);
+    
+    if(dst_c == NULL)
+        __free(_x);
+}
+
 
 /*===========================================================================================================================
  > Image Processing Reference 

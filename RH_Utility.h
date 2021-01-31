@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <math.h>
+#include <complex.h>
 
 #ifdef __cplusplus
  extern "C" {
@@ -90,7 +92,25 @@ int        __Point_toLine    (int xs,int ys,int xe,int ye,               int px,
 int        __Point_toTriangle(int x1,int y1,int x2,int y2,int x3,int y3, int px,int py);
 int        __Point_toCircle  (int xc,int yc,int radius,                  int px,int py);
 
+/*===========================================================================================================================
+ > DSP Reference
+============================================================================================================================*/
+ struct __ComplexFLOAT_t{
+     float_t  real;
+     float_t  imag;
+ };
+ typedef struct __ComplexFLOAT_t __ComplexFLOAT_t;
 
+ struct __ComplexINT_t{
+     long  real;
+     long  imag;
+ };
+ typedef struct __ComplexINT_t __ComplexINT_t;
+  
+void      __rDFT_Float    (const float_t*          src, float_t* dst_m, __ComplexFLOAT_t* dst_c, size_t dftLen);
+void      __cDFT_Float    (const float complex*    src, float_t* dst_m, float complex*    dst_c, size_t dftLen);
+void      __rIDFT_Float   (const float_t*          src, float_t* dst_m, __ComplexFLOAT_t* dst_c, size_t dftLen);
+void      __cIDFT_Float   (const float complex*    src, float_t* dst_m, float complex*    dst_c, size_t dftLen);
 
 /*=====================================================================
  > Image Processing Reference 
@@ -101,7 +121,6 @@ struct __PixelRGB565_t{
     uint16_t G : 6;
     uint16_t B : 5;
 };
-
 union __UNION_PixelRGB565_t{
     uint16_t R : 5;
     uint16_t G : 6;
