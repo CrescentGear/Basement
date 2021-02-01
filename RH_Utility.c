@@ -268,44 +268,43 @@ int __Point_toCircle(int xc,int yc,int radius,int px,int py){
  > DSP Reference
 ============================================================================================================================*/
 
-void __rDFT_Float(const float_t* src,float_t* dst_m,__ComplexFLOAT_t* dst_c,size_t dftLen){
-    __ComplexFLOAT_t* pClx = dst_c;
+void __rDFT_Float(const float* src,float_t* dst_m,float complex* dst_c,size_t dftLen){
+    float complex* X  = dst_c;
+    const float*   _x = src;
     if( (dst_m == NULL && dst_c == NULL) || src == NULL)
         return;
-    if( pClx == NULL ){
-        pClx = (__ComplexFLOAT_t*)__malloc(dftLen*sizeof(__ComplexFLOAT_t));
-        if( pClx == NULL ){
+    if( X == NULL ){
+        X = (float complex*)__malloc(dftLen*sizeof(float complex));
+        if( X == NULL ){
             return;
         }
     }
-    memset(pClx,0,dftLen*sizeof(__ComplexFLOAT_t));
+    memset(X,0,dftLen*sizeof(__ComplexFLOAT_t));
     
     for(size_t k=0;k<((dftLen+2)>>1);k++){
         for(size_t n=0;n<dftLen;n++){
-            double temp = 2*M_PI*k*n/dftLen;
-            pClx[k].real += src[n]*cos(temp);
-            pClx[k].imag += src[n]*sin(temp);
+            double wt = 2*M_PI*k*n/dftLen;
+            X[k] += _x[n]*cexp(-I*wt);
         }
         if(dst_m != NULL)
-            dst_m[k] = sqrt(pClx[k].real*pClx[k].real+pClx[k].imag*pClx[k].imag);
-        
+            dst_m[k] = sqrt(creal(X[k])*creal(X[k])+cimag(X[k])*cimag(X[k]));
         // Since the result of DFT is symmetrical, just copy the previous value.
         if(k!=0){
-            pClx[dftLen-k].real =   pClx[k].real;
-            pClx[dftLen-k].imag = - pClx[k].imag;
+            X[dftLen-k] = conj(X[k]);
             if(dst_m != NULL)
-                dst_m [dftLen-k]    =   dst_m[k];
+                dst_m [dftLen-k] = dst_m[k];
         }
         
     }
-//    for(size_t k=0;k<dftLen;k++)
-//        printf("| %f + \tj*%f | = \t%f\n",pClx[k].real,pClx[k].imag,dst_m[k]);
+    for(size_t k=0;k<dftLen;k++)
+        printf("| %f + \tj*%f | = \t%f\n",creal(X[k]),cimag(X[k]),dst_m[k]);
+    
     if(dst_c == NULL)
-        __free(pClx);
+        __free(X);
     
 }
 
-void __rFFT_Float(const float_t* src,float_t* dst_m,__ComplexFLOAT_t* dst_c,size_t dftLen){
+void __rFFT_Float(const float_t* src,float_t* dst_m,float complex* dst_c,size_t dftLen){
     
 }
 
@@ -332,14 +331,14 @@ void __cDFT_Float(const float complex* src,float_t* dst_m,float complex* dst_c,s
             dst_m[k] = sqrt(creal(X[k])*creal(X[k]) + cimag(X[k])*cimag(X[k]));
     }
     
-    for(size_t k=0;k<dftLen;k++)
-        printf("| %.4f + j* %.4f | = \t%f\n",creal(X[k]),cimag(X[k]),dst_m[k]);
+//    for(size_t k=0;k<dftLen;k++)
+//        printf("| %.4f + j* %.4f | = \t%f\n",creal(X[k]),cimag(X[k]),dst_m[k]);
     
     if(dst_c == NULL)
         __free(X);
 }
 
-void __rIDFT_Float(const float_t* src,float_t* dst_m,__ComplexFLOAT_t* dst_c,size_t dftLen){
+void __rIDFT_Float(const float_t* src,float_t* dst_m,float complex* dst_c,size_t dftLen){
     
 }
 
@@ -366,8 +365,8 @@ void __cIDFT_Float(const float complex* src,float_t* dst_m,float complex* dst_c,
         
     }
     
-    for(size_t k=0;k<dftLen;k++)
-        printf("| %.4f + \tj*%.4f | = \t%.4f\n",creal(_x[k]),cimag(_x[k]),dst_m[k]);
+//    for(size_t k=0;k<dftLen;k++)
+//        printf("| %.4f + \tj*%.4f | = \t%.4f\n",creal(_x[k]),cimag(_x[k]),dst_m[k]);
     
     if(dst_c == NULL)
         __free(_x);

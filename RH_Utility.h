@@ -107,9 +107,9 @@ int        __Point_toCircle  (int xc,int yc,int radius,                  int px,
  };
  typedef struct __ComplexINT_t __ComplexINT_t;
   
-void      __rDFT_Float    (const float_t*          src, float_t* dst_m, __ComplexFLOAT_t* dst_c, size_t dftLen);
+void      __rDFT_Float    (const float*            src, float_t* dst_m, float complex*    dst_c, size_t dftLen);
 void      __cDFT_Float    (const float complex*    src, float_t* dst_m, float complex*    dst_c, size_t dftLen);
-void      __rIDFT_Float   (const float_t*          src, float_t* dst_m, __ComplexFLOAT_t* dst_c, size_t dftLen);
+void      __rIDFT_Float   (const float_t*          src, float_t* dst_m, float complex*    dst_c, size_t dftLen);
 void      __cIDFT_Float   (const float complex*    src, float_t* dst_m, float complex*    dst_c, size_t dftLen);
 
 /*=====================================================================
