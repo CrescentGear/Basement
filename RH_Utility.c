@@ -1,9 +1,14 @@
-#include "RH_Utility.h"
+/*===========================================================================================================================
+ > Includes
+============================================================================================================================*/
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-
+#include "RH_Utility.h"
+#ifdef __cplusplus
+ extern "C" {
+#endif
 /*===========================================================================================================================
  > Common 
 ============================================================================================================================*/
@@ -20,6 +25,7 @@
 #endif
 
 
+     
 /*===========================================================================================================================
  > Algebra Reference 
 ============================================================================================================================*/
@@ -296,8 +302,7 @@ void __rDFT_Float(const float* src,float_t* dst_m,float complex* dst_c,size_t df
         }
         
     }
-    for(size_t k=0;k<dftLen;k++)
-        printf("| %f + \tj*%f | = \t%f\n",creal(X[k]),cimag(X[k]),dst_m[k]);
+//    for(size_t k=0;k<dftLen;k++) printf("| %f + \tj*%f | = \t%f\n",creal(X[k]),cimag(X[k]),dst_m[k]);
     
     if(dst_c == NULL)
         __free(X);
@@ -331,8 +336,7 @@ void __cDFT_Float(const float complex* src,float_t* dst_m,float complex* dst_c,s
             dst_m[k] = sqrt(creal(X[k])*creal(X[k]) + cimag(X[k])*cimag(X[k]));
     }
     
-//    for(size_t k=0;k<dftLen;k++)
-//        printf("| %.4f + j* %.4f | = \t%f\n",creal(X[k]),cimag(X[k]),dst_m[k]);
+//    for(size_t k=0;k<dftLen;k++) printf("| %.4f + j* %.4f | = \t%f\n",creal(X[k]),cimag(X[k]),dst_m[k]);
     
     if(dst_c == NULL)
         __free(X);
@@ -355,7 +359,7 @@ void __cIDFT_Float(const float complex* src,float_t* dst_m,float complex* dst_c,
     for(size_t k=0;k<dftLen;k++){
         for(size_t n=0;n<dftLen;n++){
             double wt = 2*M_PI*k*n/((double)(dftLen));
-            _x[k]  += X[n] * (cos(wt) + sin(wt)*I);
+            _x[k]    += X[n] * cexp(I*wt); // Same Effect: _x[k] += X[n] * (cos(wt) + sin(wt)*I)
         }
         
         _x[k] /= (double)(dftLen);
@@ -365,8 +369,7 @@ void __cIDFT_Float(const float complex* src,float_t* dst_m,float complex* dst_c,
         
     }
     
-//    for(size_t k=0;k<dftLen;k++)
-//        printf("| %.4f + \tj*%.4f | = \t%.4f\n",creal(_x[k]),cimag(_x[k]),dst_m[k]);
+//    for(size_t k=0;k<dftLen;k++) printf("| %.4f + \tj*%.4f | = \t%.4f\n",creal(_x[k]),cimag(_x[k]),dst_m[k]);
     
     if(dst_c == NULL)
         __free(_x);
@@ -940,6 +943,11 @@ void* __memsetDWORD(void* __b,long value,size_t num){
     return __b;
 }
 
+     
+#ifdef __cplusplus
+ }
+#endif
+     
 #if 0
 int main(int argc, char const *argv[])
 {
